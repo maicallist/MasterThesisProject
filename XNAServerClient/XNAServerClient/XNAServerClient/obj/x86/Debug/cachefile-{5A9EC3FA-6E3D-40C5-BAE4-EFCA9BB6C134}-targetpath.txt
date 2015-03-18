@@ -1,0 +1,14 @@
+Content\Splash\image1.xnb
+Content\Splash\image3.xnb
+Content\balla.xnb
+Content\fade.xnb
+Content\null.xnb
+Content\platform.xnb
+Content\Font1.xnb
+Content\Splash\image1.png
+Content\Splash\image3.png
+Content\balla.png
+Content\fade.png
+Content\null.png
+Content\platform.png
+Content\Font1.spritefont

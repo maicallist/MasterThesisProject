@@ -1,0 +1,1 @@
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClientContent\obj\x86\Debug\XNAServerClientContent.contentprojResolveAssemblyReference.cache
