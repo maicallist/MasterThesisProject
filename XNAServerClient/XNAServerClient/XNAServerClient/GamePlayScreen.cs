@@ -1,4 +1,5 @@
 ﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,38 +8,56 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.GamerServices;
+using Microsoft.Xna.Framework.Net;
+
 
 namespace XNAServerClient
 {
     public class GamePlayScreen : GameScreen
     {
+        #region Variables
+
         Platform platform;
         Ball ball;
 
-        bool start;
+        //game state
+        GameState gameState;
 
         SpriteFont font;
 
-        public static int score;
+        //Networking Members
+        NetworkSession session;
+        //AvailableNetworkSession AvailablesSession;
+        PacketReader packetReader;
+        PacketWriter packetWriter;
+        bool isServer;
 
-        //background
-        //LayeredBackground background;
-        //Texture2D backLayer;
-        //nothing on frontLayer
-        //Texture2D frontLayer;
+        enum GameState { Menu, FindGame, WaitingGame, PlayGame }
+        enum SessionProperty { GameMode, SkillLevel, ScoreToWin }
+        enum GameMode { Practice, Timed, CaptureTheFlag }
+        enum SkillLevel { Beginner, Intermediate, Advanced }
+        enum PacketType { Enter, Leave, Data }
 
-        //game state
-        bool ending;
+        string errorMessage;
+
+        #endregion
 
         public override void LoadContent(ContentManager Content, InputManager inputManager)
         {
             base.LoadContent(Content, inputManager);
 
-            start = false;
-            ending = false;
+            //inital game state
+            gameState = GameState.FindGame;
 
-            score = 100;
+            //networking state
+            isServer = false;
 
+            //inital network
+            packetReader = new PacketReader();
+            packetWriter = new PacketWriter();
+
+            //loading assets
             if (font == null)
                 font = content.Load<SpriteFont>("Font1");
 
@@ -46,12 +65,7 @@ namespace XNAServerClient
             platform.LoadContent(Content, inputManager);
             ball = new Ball();
             ball.LoadContent(Content, inputManager);
-            //brickSet = new BrickSet();
-            //brickSet.Loadcontent(Content, inputManager);
 
-            //background = new LayeredBackground(Game1.myGameInstance.Graphics, ball, inputManager);
-            //backLayer = content.Load<Texture2D>("Background/bg1");
-            //background.AddLayer(backLayer, 1.0f, 40f);
         }
 
         public override void UnloadContent()
@@ -62,134 +76,88 @@ namespace XNAServerClient
         public override void Update(GameTime gameTime)
         {
             //prevent ball moving before start
-            if (!start)
+            if (gameState != GameState.PlayGame)
                 ball.Velocity = new Vector2(0, 0);
 
-            //background.Update(gameTime, platform.Position);
-
-            Rectangle platformRect = platform.Rectangle;
-            Color[] platformColor = platform.ColorData;
-            Rectangle ballRect = ball.Rectangle;
-            Color[] ballColor = ball.ColorData;
-            //ball collade with plaform
-            if (ballRect.Intersects(platformRect))
+            if (gameState == GameState.FindGame)
+                JoinGame();
+            else if (gameState == GameState.WaitingGame)
+            { 
+                //waiting server to match player and start game 
+            }
+            else if (gameState == GameState.PlayGame)
             {
-                //check pixel collision
-                if (UpdateCollision(ballRect, ballColor, platformRect, platformColor))
+                ///receive packet from server
+                
+
+                ///update local game
+
+                Rectangle platformRect = platform.Rectangle;
+                Color[] platformColor = platform.ColorData;
+                Rectangle ballRect = ball.Rectangle;
+                Color[] ballColor = ball.ColorData;
+                //ball collade with plaform
+                if (ballRect.Intersects(platformRect))
                 {
-                    //if ball center is higher than platform, ball's velocity Y is negative 
-                    //if ball center is lower than platform, ball's velocity Y is positive
-                    //Vector2 ballOrigin = new Vector2(ball.Origin.X + ballRect.X, ball.Origin.Y + ballRect.Y);
-                    //Vector2 platformOrigin = new Vector2(platform.Origin.X + platformRect.X, platform.Origin.Y + platformRect.Y);
-                    Vector2 ballOrigin = ball.Origin + ball.Position;
-                    Vector2 platformOrigin = platform.Origin + platform.Position;
-
-                    //platform height is 25, so check -12 to 12 around origin.y
-                    //if ((ballOrigin.Y - platformOrigin.Y) <= -12)
-                    //    ball.Velocity = new Vector2(ball.Velocity.X, ball.Velocity.Y * -1);
-                    //else if ((ballOrigin.Y - platformOrigin.Y) >= 12.5)
-                    //    ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y));
-                    //else if (Math.Abs(ballOrigin.Y - platformOrigin.Y) < 12)
-                    //    ball.Velocity = new Vector2(ball.Velocity.X * -1, ball.Velocity.Y);
-
-                    if (ballOrigin.X >= platform.Position.X && ballOrigin.X <= platform.Position.X + platform.Dimension.X)
+                    //check pixel collision
+                    if (UpdateCollision(ballRect, ballColor, platformRect, platformColor))
                     {
-                        if (ballOrigin.Y < platformOrigin.Y)
-                            ball.Velocity = new Vector2(ball.Velocity.X, -Math.Abs(ball.Velocity.Y));
-                        else if (ballOrigin.Y > platformOrigin.Y)
-                            ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y));
-                    }
-                    else
-                    { 
-                        if (ballOrigin.X < platformOrigin.X)
-                            ball.Velocity = new Vector2(-Math.Abs(ball.Velocity.X), ball.Velocity.Y);
-                        else if (ballOrigin.X > platformOrigin.X)
-                            ball.Velocity = new Vector2(Math.Abs(ball.Velocity.X), ball.Velocity.Y);
-                    }
+                        //if ball center is higher than platform, ball's velocity Y is negative 
+                        //if ball center is lower than platform, ball's velocity Y is positive
+                        Vector2 ballOrigin = ball.Origin + ball.Position;
+                        Vector2 platformOrigin = platform.Origin + platform.Position;
 
-                    //if platform is moving while collade, add extra speed to ball
-                    //if (inputManager.KeyDown(Keys.Left, Keys.A))
-                    //    ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
-                    //else if (inputManager.KeyDown(Keys.Right, Keys.D))
-                    //    ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
+                        if (ballOrigin.X >= platform.Position.X && ballOrigin.X <= platform.Position.X + platform.Dimension.X)
+                        {
+                            if (ballOrigin.Y < platformOrigin.Y)
+                                ball.Velocity = new Vector2(ball.Velocity.X, -Math.Abs(ball.Velocity.Y));
+                            else if (ballOrigin.Y > platformOrigin.Y)
+                                ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y));
+                        }
+                        else
+                        {
+                            if (ballOrigin.X < platformOrigin.X)
+                                ball.Velocity = new Vector2(-Math.Abs(ball.Velocity.X), ball.Velocity.Y);
+                            else if (ballOrigin.X > platformOrigin.X)
+                                ball.Velocity = new Vector2(Math.Abs(ball.Velocity.X), ball.Velocity.Y);
+                        }
+                    }
                 }
+
+                base.Update(gameTime);
+                platform.Update(gameTime);
+                ball.Update(gameTime);
+
+                ///write data to server
+                
             }
-            
-            //check collade with brick
-            //Rectangle brickRect;
-            //Color[] brickColor;
-            //for (int i = 0; i < brickSet.Count; i++)
-            //{ 
-            //    brickRect = brickSet.At(i).Rectangle;
-            //    brickColor = brickSet.At(i).ColorData;
-            //    if (ballRect.Intersects(brickRect))
-            //    { 
-            //        //check the pixel
-            //        if (UpdateCollision(ballRect, ballColor, brickRect, brickColor))
-            //        {
-            //            //update ball velocity, similar to platformer
-            //            Vector2 ballOrigin = new Vector2(ball.Origin.X + ballRect.X, ball.Origin.Y + ballRect.Y);
-            //            Vector2 brickOrigin = new Vector2(brickSet.At(i).Origin.X + brickRect.X, brickSet.At(i).Origin.Y + brickRect.Y);
+        }
 
-            //            if ((ballOrigin.Y - brickOrigin.Y) <= -17)
-            //                ball.Velocity = new Vector2(ball.Velocity.X, ball.Velocity.Y * -1);
-            //            else if ((ballOrigin.Y - brickOrigin.Y) >= 17)
-            //                ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y));
-            //            else if (Math.Abs(ballOrigin.Y - brickOrigin.Y) < 17)
-            //                ball.Velocity = new Vector2(ball.Velocity.X * -1, ball.Velocity.Y);
+        public override void Draw(SpriteBatch spriteBatch)
+        {
+            base.Draw(spriteBatch);
 
-            //            //update brick effect to ball
-            //            if (brickSet.At(i).BrickName.Equals("b2"))
-            //            {
-            //                if (ball.Velocity.Y > 0)
-            //                    ball.Velocity = new Vector2(ball.Velocity.X, ball.Velocity.Y + 5);
-            //                else
-            //                    ball.Velocity = new Vector2(ball.Velocity.X, ball.Velocity.Y - 5);
-            //            }
-            //            else if (brickSet.At(i).BrickName.Equals("b3"))
-            //            {
-            //                if (ball.Velocity.Y > 5)
-            //                    ball.Velocity = new Vector2(ball.Velocity.X, ball.Velocity.Y - 5);
-            //                else if (ball.Velocity.Y < -5)
-            //                    ball.Velocity = new Vector2(ball.Velocity.X, ball.Velocity.Y + 5);
-            //            }
+            ball.Draw(spriteBatch);
+            platform.Draw(spriteBatch);
 
-            //            //delete brick
-            //            brickSet.RemoveAt(i);
-            //            score += 10;
-            //        }
-            //    }
-            //}
 
-            base.Update(gameTime);
-            platform.Update(gameTime);
-            ball.Update(gameTime);
-            //brickSet.Update(gameTime);
+            //int displayScore = score - ball.HitGround * 5;
+            //if (!start)
+            //    spriteBatch.DrawString(font, "Press Space to Start..", 
+            //        new Vector2(ScreenManager.Instance.Dimensions.X/2 - font.MeasureString("Press Space to Start..").X/2, ScreenManager.Instance.Dimensions.Y/2), Color.White);
+            //if (start)
+            //    spriteBatch.DrawString(font, "Score " + displayScore, new Vector2(10, 770), Color.White);
 
-            if (inputManager.KeyPressed(Keys.Space) && !start)
-            {
-                start = true;
-                ball.Velocity = new Vector2(-7, -10);
-            }
-
-            ////end game
-            //if (brickSet.Count == 0)
+            //if (ending)
             //{
-            //    ending = true;
-            //    if (inputManager.KeyPressed(Keys.Space))
-            //    {
-            //        Type newClass = Type.GetType("IndividualGame.GamePlayScreen");
-            //        ScreenManager.Instance.AddScreen((GameScreen)Activator.CreateInstance(newClass), inputManager);
-            //    }
-            //    else if (inputManager.KeyPressed(Keys.Escape))
-            //    {
-            //        Type newClass = Type.GetType("IndividualGame.TitleScreen");
-            //        ScreenManager.Instance.AddScreen((GameScreen)Activator.CreateInstance(newClass), inputManager);
-            //    }
+            //    spriteBatch.DrawString(font, "Press Space to Restart..",
+            //        new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Press Space to Restart..").X / 2, ScreenManager.Instance.Dimensions.Y / 2), Color.White);
+            //    spriteBatch.DrawString(font, "Press ESC to Title..",
+            //        new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Press ESC to Title..").X / 2, ScreenManager.Instance.Dimensions.Y / 2), Color.White);
             //}
         }
 
-        // check each pixel on two texture, looking for overlap
+        /* check each pixel on two texture, looking for overlap */
         public bool UpdateCollision(Rectangle rect1, Color[] colorData1, Rectangle rect2, Color[] colorData2)
         {
             int top = Math.Max(rect1.Top, rect2.Top);
@@ -211,28 +179,59 @@ namespace XNAServerClient
             return false;
         }
 
-        public override void Draw(SpriteBatch spriteBatch)
+
+        /* SignIn displays the Xbox360 Guide */
+        static protected void SignIn()
         {
-            base.Draw(spriteBatch);
-            //background.Draw();
-            ball.Draw(spriteBatch);
-            platform.Draw(spriteBatch);
-            //brickSet.Draw(spriteBatch);
+            if (!Guide.IsVisible)
+                Guide.ShowSignIn(1, true);
+        }
 
-            int displayScore = score - ball.HitGround * 5;
-            if (!start)
-                spriteBatch.DrawString(font, "Press Space to Start..", 
-                    new Vector2(ScreenManager.Instance.Dimensions.X/2 - font.MeasureString("Press Space to Start..").X/2, ScreenManager.Instance.Dimensions.Y/2), Color.White);
-            if (start)
-                spriteBatch.DrawString(font, "Score " + displayScore, new Vector2(10, 770), Color.White);
-
-            if (ending)
+        /* join in a existing session */
+        public void JoinGame()
+        {
+            int maximumLocalGamers = 2;
+            try
             {
-                spriteBatch.DrawString(font, "Press Space to Restart..",
-                    new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Press Space to Restart..").X / 2, ScreenManager.Instance.Dimensions.Y / 2), Color.White);
-                spriteBatch.DrawString(font, "Press ESC to Title..",
-                    new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Press ESC to Title..").X / 2, ScreenManager.Instance.Dimensions.Y / 2), Color.White);
+                AvailableNetworkSessionCollection availableSessions
+                    = NetworkSession.Find(NetworkSessionType.SystemLink, maximumLocalGamers, null);
+
+                if (availableSessions.Count == 0)
+                {
+                    errorMessage = "Server is not available.";
+                    return;
+                }
+
+                //join the first session
+                //in this case, we only have one session for testing
+                session = NetworkSession.Join(availableSessions[0]);
+                gameState = GameState.WaitingGame;
+                //hook session event
+                //HookSessionEvents();
+            }
+            catch (Exception e)
+            {
+                errorMessage = e.Message;
             }
         }
+
+        /*  */
+        public void ReceivePacket()
+        {
+            NetworkGamer sender;
+
+            foreach (LocalNetworkGamer gamer in session.LocalGamers)
+            {
+                // Keep reading while packets are available.
+                while (gamer.IsDataAvailable)
+                {
+                    // Read a single packet.
+                    //Even if we are the host, we must read to clear the queue
+                    gamer.ReceiveData(packetReader, out sender);
+                }
+            }
+        }
+
+
     }
 }
