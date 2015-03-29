@@ -17,7 +17,8 @@ namespace XNAServerClient
     {
         #region Variables
 
-        Platform platform;
+        Platform platform_local;
+        Platform platform_remote;
         Ball ball;
 
         SpriteFont font;
@@ -42,18 +43,33 @@ namespace XNAServerClient
         enum SkillLevel { Beginner, Intermediate, Advanced }
         enum PacketType { Enter, Leave, Data }
 
+        public struct AppDataUnit
+        {
+            /* 'h' for host, 'k' for online gamer */
+            Char hostTag;
+            Vector2 ballPos;
+            Vector2 ballVel;
+            Vector2 remotePlatformPos;
+            Vector2 remotePlatformVel;
+        }
+
         #endregion
 
         public override void LoadContent(ContentManager Content, InputManager inputManager)
         {
             base.LoadContent(Content, inputManager);
-
+            
             //loading assets
             if (font == null)
                 font = content.Load<SpriteFont>("Font1");
 
-            platform = new Platform();
-            platform.LoadContent(Content, inputManager);
+            platform_local = new Platform();
+            platform_local.LoadContent(Content, inputManager);
+            platform_remote = new Platform();
+            platform_remote.LoadContent(Content, inputManager);
+            platform_remote.ControlByPlayer = false;
+            platform_remote.Position = new Vector2(ScreenManager.Instance.Dimensions.X / 2 - platform_remote.Dimension.X / 2, 20);
+
             ball = new Ball();
             ball.LoadContent(Content, inputManager);
 
@@ -84,7 +100,8 @@ namespace XNAServerClient
 
             base.Update(gameTime);
             ball.Update(gameTime);
-            platform.Update(gameTime);
+            platform_local.Update(gameTime);
+            platform_remote.Update(gameTime);
 
             if (session != null)
             {
@@ -172,8 +189,8 @@ namespace XNAServerClient
 
             base.Draw(spriteBatch);
             ball.Draw(spriteBatch);
-            platform.Draw(spriteBatch);
-
+            platform_local.Draw(spriteBatch);
+            platform_remote.Draw(spriteBatch);
         }
 
         /* check each pixel on two texture, looking for overlap */
@@ -399,8 +416,8 @@ namespace XNAServerClient
                  * to the Internet.
                  */
                 /* days, hours, minutes, seconds, milliseconds */
-                TimeSpan latency = new TimeSpan(0, 0, 0, 0, 800);
-                session.SimulatedLatency = latency;
+                //TimeSpan latency = new TimeSpan(0, 0, 0, 0, 800);
+                //session.SimulatedLatency = latency;
                 gameState = GameState.PlayGame;
             }
         }

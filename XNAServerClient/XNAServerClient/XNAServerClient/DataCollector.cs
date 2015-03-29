@@ -44,7 +44,7 @@ namespace XNAServerClient
 
             platform_com = new Platform();
             platform_com.LoadContent(Content, inputManager);
-            platform_com.Position = new Vector2(290 - platform_com.Dimension.X / 2, 20);
+            platform_com.Position = new Vector2(ScreenManager.Instance.Dimensions.X/2 - platform_com.Dimension.X / 2, 20);
             platform_com.ControlByPlayer = false;
 
             ball = new Ball();
