@@ -23,6 +23,8 @@ namespace XNAServerClient
 
         SpriteFont font;
 
+        bool gameStart;
+
         /* 4.0 */
         Color color;
         Color clearColor;
@@ -81,6 +83,8 @@ namespace XNAServerClient
             ball = new Ball();
             ball.LoadContent(Content, inputManager);
 
+            gameStart = false;
+
             /* 4.0 */
             color = Color.White;
             clearColor = Color.CornflowerBlue;
@@ -107,6 +111,58 @@ namespace XNAServerClient
         {
             inputManager.Update();
             UpdateInput(gameTime);
+
+            if (!gameStart && session != null && session.SessionState == NetworkSessionState.Lobby)
+            {
+                if (inputManager.KeyPressed(Keys.Y))
+                {
+                    ball.Velocity = new Vector2(-7, -10);
+                    gameStart = true;
+                }
+            }
+
+            /* check collision with local platform */
+            Rectangle platformRect_local = platform_local.Rectangle;
+            Color[] platformColor_local = platform_local.ColorData;
+            Rectangle ballRect = ball.Rectangle;
+            Color[] ballColor = ball.ColorData;
+            //ball collade with plaform_player
+            if (ballRect.Intersects(platformRect_local))
+            {
+                //check pixel collision
+                if (UpdateCollision(ballRect, ballColor, platformRect_local, platformColor_local))
+                {
+                    //if ball center is higher than platform, ball's velocity Y is negative 
+                    //if ball center is lower than platform, ball's velocity Y is positive
+                    Vector2 ballOrigin = new Vector2(ball.Origin.X + ballRect.X, ball.Origin.Y + ballRect.Y);
+                    Vector2 platformOrigin_local = new Vector2(platform_local.Origin.X + platformRect_local.X, platform_local.Origin.Y + platformRect_local.Y);
+
+                    //platform height is 25, so check -12 to 12 around origin.y
+                    if ((ballOrigin.Y - platformOrigin_local.Y) <= -12)
+                        ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y) * -1);
+                    else if ((ballOrigin.Y - platformOrigin_local.Y) >= 12)
+                        ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y));
+                    else if (Math.Abs(ballOrigin.Y - platformOrigin_local.Y) < 12)
+                        ball.Velocity = new Vector2(ball.Velocity.X * -1, ball.Velocity.Y);
+
+                    //if platform is moving while collade, add extra speed to ball
+                    if (platform_local.Velocity.X > 0)
+                    {
+                        if (ball.Velocity.X > 0 || ball.Velocity.X < -9)
+                            ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
+                        /* I can only catch 22 */
+                        if (ball.Velocity.X > 22)
+                            ball.Velocity = new Vector2(22, ball.Velocity.Y);
+                    }
+                    else if (platform_local.Velocity.X < 0)
+                    {
+                        if (ball.Velocity.X > 9 || ball.Velocity.X < 0)
+                            ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
+                        if (ball.Velocity.X < -22)
+                            ball.Velocity = new Vector2(-22, ball.Velocity.Y);
+                    }
+                }
+            }
 
             base.Update(gameTime);
             ball.Update(gameTime);
@@ -181,6 +237,8 @@ namespace XNAServerClient
                                         state += " - Host\n\n" + "Press ESC to return to the lobby";
                                     else
                                         state += " - Client\n\n" + "Press ESC to return to the menu";
+                                    /* game start, I don't want to see menu */
+                                    state = "";
                                     break;
                                 }
                         }
@@ -194,7 +252,9 @@ namespace XNAServerClient
                 spriteBatch.DrawString(font, sessionInformation, new Vector2(30, ScreenManager.Instance.Dimensions.Y/4), color);
 
             //Draw the current state
-            spriteBatch.DrawString(font, state, new Vector2(30, ScreenManager.Instance.Dimensions.Y/2), color);
+            if (!gameStart)
+                spriteBatch.DrawString(font, state, new Vector2(30, ScreenManager.Instance.Dimensions.Y/2), color);
+
             #endregion
 
             base.Draw(spriteBatch);
