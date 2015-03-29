@@ -27,6 +27,7 @@ namespace XNAServerClient
             myGameInstance = this;
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
+            Components.Add(new GamerServicesComponent(this));
         }
 
         /// <summary>
@@ -42,12 +43,13 @@ namespace XNAServerClient
             ScreenManager.Instance.Initialize();
 
             /* set screen size */
-            ScreenManager.Instance.Dimensions = new Vector2(550, 900);
+            ScreenManager.Instance.Dimensions = new Vector2(580, 900);
+            //ScreenManager.Instance.Dimensions = new Vector2(1200, 900);
             graphics.PreferredBackBufferWidth = (int)ScreenManager.Instance.Dimensions.X;
             graphics.PreferredBackBufferHeight = (int)ScreenManager.Instance.Dimensions.Y;
             graphics.ApplyChanges();
 
-            base.Initialize();
+             base.Initialize();
         }
 
         /// <summary>

@@ -83,7 +83,7 @@ namespace XNAServerClient
         {
 			int windowHeight = Game1.myGameInstance.GraphicsDevice.Viewport.Height;
 			int windowWidth = Game1.myGameInstance.GraphicsDevice.Viewport.Width;
-			spriteBatch.DrawString(font, "Press Enter To Skip..", new Vector2(10, windowHeight - 30), Color.White);
+			spriteBatch.DrawString(font, "Press Enter To Skip..", new Vector2(10, windowHeight/10*9), Color.White);
             fade[imageNumber].Draw(spriteBatch);
         }
     }

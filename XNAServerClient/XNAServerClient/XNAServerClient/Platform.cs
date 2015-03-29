@@ -18,6 +18,7 @@ namespace XNAServerClient
         Vector2 dimension;
 
         float moveSpeed;
+        bool controlByPlayer;
 
         Color[] textureData;
 
@@ -47,6 +48,11 @@ namespace XNAServerClient
             get { return dimension; }
         }
 
+        public bool ControlByPlayer
+        {
+            set { controlByPlayer = value; }
+        }
+
         public override void LoadContent(ContentManager Content, InputManager inputManager)
         {
             base.LoadContent(Content, inputManager);
@@ -61,8 +67,10 @@ namespace XNAServerClient
             rotation = 0.0f;
             scale = 1.0f;
             alpha = 0.0f;
-            position = new Vector2(ScreenManager.Instance.Dimensions.X / 2 - platformImage.Width / 2, ScreenManager.Instance.Dimensions.Y - 100);
+            position = new Vector2(ScreenManager.Instance.Dimensions.X / 2 - platformImage.Width / 2, 
+                ScreenManager.Instance.Dimensions.Y - 20 - platformImage.Height);
 
+            controlByPlayer = true;
             moveSpeed = 10f;
             dimension = new Vector2(platformImage.Width, platformImage.Height);
         }
@@ -87,11 +95,11 @@ namespace XNAServerClient
             else
                 alpha = 1.0f;
 
-            if (inputManager.KeyDown(Keys.Left, Keys.A))
+            if (inputManager.KeyDown(Keys.Left, Keys.A) && controlByPlayer)
             {
                 position = new Vector2(position.X - moveSpeed, position.Y);
             }
-            else if (inputManager.KeyDown(Keys.Right, Keys.D))
+            else if (inputManager.KeyDown(Keys.Right, Keys.D) && controlByPlayer)
             {
                 position = new Vector2(position.X + moveSpeed, position.Y);
             }

@@ -12,6 +12,3 @@ Content\platform.png
 Content\Font1.spritefont
 Content\Splash\image1.png
 Content\Splash\image3.png
-Load\Ending.cme
-Load\Menu.cme
-Load\Splash.cme

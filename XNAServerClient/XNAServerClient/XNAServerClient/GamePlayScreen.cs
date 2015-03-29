@@ -1,5 +1,4 @@
 ﻿using System;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,41 +20,33 @@ namespace XNAServerClient
         Platform platform;
         Ball ball;
 
-        //game state
-        GameState gameState;
-
         SpriteFont font;
 
-        //Networking Members
+        /* 4.0 */
+        Color color;
+        Color clearColor;
+        GameState gameState;
+
+        //Networking members
         NetworkSession session;
-        //AvailableNetworkSession AvailablesSession;
-        PacketReader packetReader;
+        AvailableNetworkSessionCollection availableSessions;
+        int sessionIndex;
+        AvailableNetworkSession availableSession;
         PacketWriter packetWriter;
+        PacketReader packetReader;
         bool isServer;
 
-        enum GameState { Menu, FindGame, WaitingGame, PlayGame }
+        enum GameState { Menu, FindGame, PlayGame }
         enum SessionProperty { GameMode, SkillLevel, ScoreToWin }
         enum GameMode { Practice, Timed, CaptureTheFlag }
         enum SkillLevel { Beginner, Intermediate, Advanced }
         enum PacketType { Enter, Leave, Data }
-
-        string errorMessage;
 
         #endregion
 
         public override void LoadContent(ContentManager Content, InputManager inputManager)
         {
             base.LoadContent(Content, inputManager);
-
-            //inital game state
-            gameState = GameState.FindGame;
-
-            //networking state
-            isServer = false;
-
-            //inital network
-            packetReader = new PacketReader();
-            packetWriter = new PacketWriter();
 
             //loading assets
             if (font == null)
@@ -66,95 +57,123 @@ namespace XNAServerClient
             ball = new Ball();
             ball.LoadContent(Content, inputManager);
 
+            /* 4.0 */
+            color = Color.White;
+            clearColor = Color.CornflowerBlue;
+            gameState = GameState.Menu;
+            sessionIndex = 0;
+            packetReader = new PacketReader();
+            packetWriter = new PacketWriter();
         }
 
         public override void UnloadContent()
         {
+            // TODO: Unload any non ContentManager content here
+
+            //Release the session
+            if (session != null)
+                session.Dispose();
+
             base.UnloadContent();
         }
 
         public override void Update(GameTime gameTime)
         {
-            //prevent ball moving before start
-            if (gameState != GameState.PlayGame)
-                ball.Velocity = new Vector2(0, 0);
+            inputManager.Update();
+            UpdateInput(gameTime);
 
-            if (gameState == GameState.FindGame)
-                JoinGame();
-            else if (gameState == GameState.WaitingGame)
-            { 
-                //waiting server to match player and start game 
-            }
-            else if (gameState == GameState.PlayGame)
+            base.Update(gameTime);
+            ball.Update(gameTime);
+            platform.Update(gameTime);
+
+            if (session != null)
             {
-                ///receive packet from server
-                
+                SendPackets(PacketType.Data);
+                ReceivePackets();
 
-                ///update local game
-
-                Rectangle platformRect = platform.Rectangle;
-                Color[] platformColor = platform.ColorData;
-                Rectangle ballRect = ball.Rectangle;
-                Color[] ballColor = ball.ColorData;
-                //ball collade with plaform
-                if (ballRect.Intersects(platformRect))
-                {
-                    //check pixel collision
-                    if (UpdateCollision(ballRect, ballColor, platformRect, platformColor))
-                    {
-                        //if ball center is higher than platform, ball's velocity Y is negative 
-                        //if ball center is lower than platform, ball's velocity Y is positive
-                        Vector2 ballOrigin = ball.Origin + ball.Position;
-                        Vector2 platformOrigin = platform.Origin + platform.Position;
-
-                        if (ballOrigin.X >= platform.Position.X && ballOrigin.X <= platform.Position.X + platform.Dimension.X)
-                        {
-                            if (ballOrigin.Y < platformOrigin.Y)
-                                ball.Velocity = new Vector2(ball.Velocity.X, -Math.Abs(ball.Velocity.Y));
-                            else if (ballOrigin.Y > platformOrigin.Y)
-                                ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y));
-                        }
-                        else
-                        {
-                            if (ballOrigin.X < platformOrigin.X)
-                                ball.Velocity = new Vector2(-Math.Abs(ball.Velocity.X), ball.Velocity.Y);
-                            else if (ballOrigin.X > platformOrigin.X)
-                                ball.Velocity = new Vector2(Math.Abs(ball.Velocity.X), ball.Velocity.Y);
-                        }
-                    }
-                }
-
-                base.Update(gameTime);
-                platform.Update(gameTime);
-                ball.Update(gameTime);
-
-                ///write data to server
-                
+                //Update the NetworkSession
+                session.Update();
             }
         }
 
         public override void Draw(SpriteBatch spriteBatch)
         {
-            base.Draw(spriteBatch);
+            if (clearColor == Color.DarkBlue || clearColor == Color.DarkGreen || clearColor == Color.DarkRed || clearColor == Color.DarkGoldenrod)
+            {
+                Game1.myGameInstance.GraphicsDevice.Clear(clearColor);
+            }
 
+            #region Display Session Info
+            string sessionInformation = "";
+            GamePadState gamePadStat = GamePad.GetState(PlayerIndex.One);
+            string state = "";
+            switch (gameState)
+            {
+                case GameState.Menu:
+                    if (gamePadStat.IsConnected)
+                        state = "Menu\n\n" + "Press X to sign in\n" + "Press LB to Host\n" + "Press RB to Join";
+                    else
+                        state = "Menu\n\n" + "Press Left Shift to sign in\n" + "Press H to Host\n" + "Press F to Join";
+                    break;
+                case GameState.FindGame:
+                    {
+                        if (gamePadStat.IsConnected)
+                            state = "Finding Game\n\n" + "Press A to enter game\n" + "Press B to return to menu";
+                        else
+                            state = "Finding Game\n\n" + "Press Enter to enter game\n" + "Press ESC to return to menu";
+
+                        //If we have an availableSession, draw the details to the screen
+                        if (availableSession != null)
+                        {
+                            string HostGamerTag = availableSession.HostGamertag;
+                            int GamersInSession = availableSession.CurrentGamerCount;
+                            int OpenPrivateGamerSlots = availableSession.OpenPrivateGamerSlots;
+                            int OpenPublicGamerSlots = availableSession.OpenPublicGamerSlots;
+                            sessionInformation = "Session available from gamertag " + HostGamerTag +
+                                "\n" + GamersInSession + " players already in this session. \n" +
+                                +OpenPrivateGamerSlots + " open private player slots available. \n" +
+                                +OpenPublicGamerSlots + " public player slots available.";
+                        }
+                        break;
+                    }
+                case GameState.PlayGame:
+                    {
+                        switch (session.SessionState)
+                        {
+                            case NetworkSessionState.Lobby:
+                                {
+                                    state = "Lobby\n\n";
+                                    if (isServer)
+                                        state += "Press Y to launch the game\n" + "Press ESC to return to the lobby";
+                                    break;
+                                }
+                            case NetworkSessionState.Playing:
+                                {
+                                    state = "Playing Game";
+                                    if (isServer)
+                                        state += " - Host\n\n" + "Press ESC to return to the lobby";
+                                    else
+                                        state += " - Client\n\n" + "Press ESC to return to the menu";
+                                    break;
+                                }
+                        }
+                    }
+                    break;
+
+            }
+
+            //Draw sessionInformation
+            if (gameState == GameState.FindGame)
+                spriteBatch.DrawString(font, sessionInformation, new Vector2(30, ScreenManager.Instance.Dimensions.Y/4), color);
+
+            //Draw the current state
+            spriteBatch.DrawString(font, state, new Vector2(30, ScreenManager.Instance.Dimensions.Y/2), color);
+            #endregion
+
+            base.Draw(spriteBatch);
             ball.Draw(spriteBatch);
             platform.Draw(spriteBatch);
 
-
-            //int displayScore = score - ball.HitGround * 5;
-            //if (!start)
-            //    spriteBatch.DrawString(font, "Press Space to Start..", 
-            //        new Vector2(ScreenManager.Instance.Dimensions.X/2 - font.MeasureString("Press Space to Start..").X/2, ScreenManager.Instance.Dimensions.Y/2), Color.White);
-            //if (start)
-            //    spriteBatch.DrawString(font, "Score " + displayScore, new Vector2(10, 770), Color.White);
-
-            //if (ending)
-            //{
-            //    spriteBatch.DrawString(font, "Press Space to Restart..",
-            //        new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Press Space to Restart..").X / 2, ScreenManager.Instance.Dimensions.Y / 2), Color.White);
-            //    spriteBatch.DrawString(font, "Press ESC to Title..",
-            //        new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Press ESC to Title..").X / 2, ScreenManager.Instance.Dimensions.Y / 2), Color.White);
-            //}
         }
 
         /* check each pixel on two texture, looking for overlap */
@@ -179,44 +198,281 @@ namespace XNAServerClient
             return false;
         }
 
-
-        /* SignIn displays the Xbox360 Guide */
-        static protected void SignIn()
+        /// <summary>
+        /// Checks for user input and reacts accordingly
+        /// </summary>
+        /// <param name="gameTime">Provides a snapshot of timing values.</param>
+        void UpdateInput(GameTime gameTime)
         {
-            if (!Guide.IsVisible)
-                Guide.ShowSignIn(1, true);
-        }
-
-        /* join in a existing session */
-        public void JoinGame()
-        {
-            int maximumLocalGamers = 2;
-            try
+            #region Handle Input
+            GamePadState currentState = GamePad.GetState(PlayerIndex.One);
+            
+            //gamepad checks
+            if (currentState.IsConnected)
             {
-                AvailableNetworkSessionCollection availableSessions
-                    = NetworkSession.Find(NetworkSessionType.SystemLink, maximumLocalGamers, null);
 
-                if (availableSessions.Count == 0)
+                switch (gameState)
                 {
-                    errorMessage = "Server is not available.";
-                    return;
-                }
+                    case GameState.Menu:
+                        {
+                            if (currentState.Buttons.X == ButtonState.Pressed)
+                                SignIn();
+                            if (currentState.Buttons.LeftShoulder == ButtonState.Pressed)
+                            {
+                                if (session == null)
+                                    HostGame();
+                            }
+                            if (currentState.Buttons.RightShoulder == ButtonState.Pressed)
+                            {
+                                if (session == null)
+                                    FindGame();
+                            }
+                            break;
+                        }
+                    case GameState.FindGame:
+                        {
+                            if (currentState.Buttons.B == ButtonState.Pressed)
+                                gameState = GameState.Menu;
 
-                //join the first session
-                //in this case, we only have one session for testing
-                session = NetworkSession.Join(availableSessions[0]);
-                gameState = GameState.WaitingGame;
-                //hook session event
-                //HookSessionEvents();
+                            else if (currentState.Buttons.A == ButtonState.Pressed)
+                                JoinGame();
+
+                            break;
+                        }
+                    case GameState.PlayGame:
+                        {
+                            switch (session.SessionState)
+                            {
+                                case NetworkSessionState.Lobby:
+                                    {
+                                        if (currentState.Buttons.Y == ButtonState.Pressed && isServer)
+                                            session.StartGame();
+                                        else if (currentState.Buttons.B == ButtonState.Pressed)
+                                        {
+                                            session.Dispose();
+                                            session = null;
+                                            gameState = GameState.Menu;
+                                        }
+                                        break;
+                                    }
+                                case NetworkSessionState.Playing:
+                                    {
+                                        //if (currentState.Buttons.B == ButtonState.Pressed && bHost)
+                                        //    session.EndGame();
+                                        if (currentState.Buttons.A == ButtonState.Pressed && isServer)
+                                            clearColor = Color.DarkGreen;
+                                        else if (currentState.Buttons.X == ButtonState.Pressed && isServer)
+                                            clearColor = Color.DarkBlue;
+                                        else if (currentState.Buttons.Y == ButtonState.Pressed && isServer)
+                                            clearColor = Color.DarkGoldenrod;
+                                        else if (currentState.Buttons.B == ButtonState.Pressed && isServer)
+                                            clearColor = Color.DarkRed;
+                                        else if (currentState.Buttons.Back == ButtonState.Pressed)
+                                        {
+                                            session.Dispose();
+                                            session = null;
+                                            gameState = GameState.Menu;
+                                            clearColor = Color.CornflowerBlue;
+                                        }
+                                        break;
+                                    }
+                            }
+                            break;
+
+                        }
+                }
             }
-            catch (Exception e)
+            else if (!currentState.IsConnected)     //keyboard checks
             {
-                errorMessage = e.Message;
+                switch (gameState)
+                {
+                    case GameState.Menu:
+                        {
+                            if (inputManager.KeyPressed(Keys.LeftShift))
+                                SignIn();
+                            if (inputManager.KeyPressed(Keys.H))
+                            {
+                                if (session == null)
+                                    HostGame();
+                                Console.WriteLine("Session Created..");
+                            }
+                            if (inputManager.KeyPressed(Keys.F))
+                            {
+                                if (session == null)
+                                    FindGame();
+                            }
+                            break;
+                        }
+                    case GameState.FindGame:
+                        {
+                            if (inputManager.KeyPressed(Keys.Escape))
+                                gameState = GameState.Menu;
+
+                            else if (inputManager.KeyPressed(Keys.Enter))
+                                JoinGame();
+
+                            break;
+                        }
+                    case GameState.PlayGame:
+                        {
+                            switch (session.SessionState)
+                            {
+                                case NetworkSessionState.Lobby:
+                                    {
+                                        if (inputManager.KeyPressed(Keys.Y) && isServer)
+                                            session.StartGame();
+                                        else if (inputManager.KeyPressed(Keys.Escape))
+                                        {
+                                            session.Dispose();
+                                            session = null;
+                                            gameState = GameState.Menu;
+                                        }
+                                        break;
+                                    }
+                                case NetworkSessionState.Playing:
+                                    {
+                                        //if (currentState.Buttons.B == ButtonState.Pressed && bHost)
+                                        //    session.EndGame();
+                                        if (inputManager.KeyPressed(Keys.V) && isServer)
+                                            clearColor = Color.DarkGreen;
+                                        else if (inputManager.KeyPressed(Keys.B) && isServer)
+                                            clearColor = Color.DarkBlue;
+                                        else if (inputManager.KeyPressed(Keys.N) && isServer)
+                                            clearColor = Color.DarkGoldenrod;
+                                        else if (inputManager.KeyPressed(Keys.M) && isServer)
+                                            clearColor = Color.DarkRed;
+                                        else if (inputManager.KeyPressed(Keys.Escape))
+                                        {
+                                            session.Dispose();
+                                            session = null;
+                                            gameState = GameState.Menu;
+                                            clearColor = Color.CornflowerBlue;
+                                        }
+                                        break;
+                                    }
+                            }
+                            break;
+
+                        }
+                }
+            }
+            #endregion
+        }
+
+        /// <summary>
+        /// HostGame is responsible for initializing a network connection and setting up a session
+        /// </summary>
+        protected void HostGame()
+        {
+            if (SignedInGamer.SignedInGamers.Count == 0)
+                SignIn();
+
+            else if (SignedInGamer.SignedInGamers.Count == 1)
+            {
+                NetworkSessionProperties sessionProperties = new NetworkSessionProperties();
+
+                sessionProperties[(int)SessionProperty.GameMode]
+                    = (int)GameMode.Practice; // Game mode
+                sessionProperties[(int)SessionProperty.SkillLevel]
+                    = (int)SkillLevel.Beginner; // Score to win
+                sessionProperties[(int)SessionProperty.ScoreToWin]
+                    = 100;
+
+                int maximumGamers = 4;  // The maximum supported is 31
+                int privateGamerSlots = 0;
+                int maximumLocalPlayers = 2;
+
+
+                // Create the session
+                session = NetworkSession.Create(
+                    NetworkSessionType.SystemLink,
+                    maximumLocalPlayers, maximumGamers, privateGamerSlots,
+                    sessionProperties);
+               
+                isServer = true;
+                session.AllowHostMigration = false;
+                session.AllowJoinInProgress = false;
+
+                /* 
+                 * XNA provides latency simulation on SystemLink Game 
+                 * to test the Internet features without connecting 
+                 * to the Internet.
+                 */
+                /* days, hours, minutes, seconds, milliseconds */
+                TimeSpan latency = new TimeSpan(0, 0, 0, 0, 800);
+                session.SimulatedLatency = latency;
+                gameState = GameState.PlayGame;
             }
         }
 
-        /*  */
-        public void ReceivePacket()
+        /// <summary>
+        /// FindGame is responsible for searching for available sessions
+        /// </summary>
+        protected void FindGame()
+        {
+            if (SignedInGamer.SignedInGamers.Count == 0)
+                SignIn();
+
+            else if (SignedInGamer.SignedInGamers.Count == 1)
+            {
+                gameState = GameState.FindGame;
+                int maximumLocalPlayers = 2;
+                NetworkSessionProperties searchProperties = new NetworkSessionProperties();
+                searchProperties[(int)SessionProperty.GameMode] = (int)GameMode.Practice;
+                searchProperties[(int)SessionProperty.SkillLevel] = (int)SkillLevel.Beginner;
+
+                availableSessions = NetworkSession.Find(
+                    NetworkSessionType.SystemLink, maximumLocalPlayers, searchProperties);
+
+                if (availableSessions.Count != 0)
+                    availableSession = availableSessions[sessionIndex];
+                Console.WriteLine("Trying to find a game, Available Session : " + availableSessions.Count);
+
+                isServer = false;
+            }
+        }
+
+        /// <summary>
+        /// JoinGame is responsible for joining an available session
+        /// </summary>
+        protected void JoinGame()
+        {
+            if (availableSessions.Count - 1 >= sessionIndex)
+            {
+                session = NetworkSession.Join(availableSessions[sessionIndex]);
+
+                AddNetworkingEvents();
+                gameState = GameState.PlayGame;
+            }
+        }
+        /// <summary>
+        /// SendPackets is responsible for writing all player information 
+        /// into a packet that is sent to the host or clients
+        /// </summary>
+        void SendPackets(PacketType packetType)
+        {
+            switch (packetType)
+            {
+                    
+                case PacketType.Data:
+                    {
+                        foreach (LocalNetworkGamer gamer in session.LocalGamers)
+                        {
+                            packetWriter.Write(clearColor.ToVector4());
+                            
+                            // Send it to all remote gamers.
+                            gamer.SendData(packetWriter, SendDataOptions.InOrder);
+                        }
+                        break;
+                    }
+            }
+        }
+
+        /// <summary>
+        /// ReadPackets is responsible for reading and storing all information 
+        /// from a received packet.
+        /// </summary>
+        void ReceivePackets()
         {
             NetworkGamer sender;
 
@@ -228,9 +484,67 @@ namespace XNAServerClient
                     // Read a single packet.
                     //Even if we are the host, we must read to clear the queue
                     gamer.ReceiveData(packetReader, out sender);
+
+                    if (!gamer.IsHost)
+                    {
+                        // Read the data and apply it to the clearColor.
+                        clearColor = new Color(packetReader.ReadVector4());
+                    }
                 }
             }
         }
+
+        /// <summary>
+        /// SignIn displays the Xbox360 Guide
+        ///
+        static protected void SignIn()
+        {
+            if (!Guide.IsVisible)
+                Guide.ShowSignIn(1, false); //true require online profile
+        }
+
+        protected void AddNetworkingEvents()
+        {
+            session.GamerJoined += new EventHandler<GamerJoinedEventArgs>(session_GamerJoined);
+            session.GamerLeft += new EventHandler<GamerLeftEventArgs>(session_GamerLeft);
+            session.GameStarted += new EventHandler<GameStartedEventArgs>(session_GameStarted);
+            session.GameEnded += new EventHandler<GameEndedEventArgs>(session_GameEnded);
+            session.SessionEnded += new EventHandler<NetworkSessionEndedEventArgs>(session_SessionEnded);
+        }
+
+        protected void RemoveNetworkingEvents()
+        {
+            session.GamerJoined -= new EventHandler<GamerJoinedEventArgs>(session_GamerJoined);
+            session.GamerLeft -= new EventHandler<GamerLeftEventArgs>(session_GamerLeft);
+            session.GameStarted -= new EventHandler<GameStartedEventArgs>(session_GameStarted);
+            session.GameEnded -= new EventHandler<GameEndedEventArgs>(session_GameEnded);
+            session.SessionEnded -= new EventHandler<NetworkSessionEndedEventArgs>(session_SessionEnded);
+        }
+
+        //Event Handling
+        void session_GamerJoined(object sender, GamerJoinedEventArgs e)
+        {
+            Console.WriteLine("A new Gamer just joined the game.");
+        }
+        void session_GamerLeft(object sender, GamerLeftEventArgs e)
+        {
+        }
+        void session_GameStarted(object sender, GameStartedEventArgs e)
+        {
+        }
+        void session_GameEnded(object sender, GameEndedEventArgs e)
+        {
+        }
+        void session_SessionEnded(object sender, NetworkSessionEndedEventArgs e)
+        {
+            session.Dispose();
+            session = null;
+        }
+        /* This is currently unused.
+        void session_HostChanged(object sender, HostChangedEventArgs e)
+        {
+        }
+        */
 
 
     }
