@@ -11,7 +11,7 @@ namespace XNAServerClient
 {
     public class Platform : Entity
     {
-        Vector2 position, origin;
+        Vector2 position, origin, velocity;
         Texture2D platformImage;
         Rectangle sourceRect;
         float rotation, scale, alpha;
@@ -51,6 +51,12 @@ namespace XNAServerClient
         public bool ControlByPlayer
         {
             set { controlByPlayer = value; }
+        }
+
+        public Vector2 Velocity
+        {
+            get { return velocity; }
+            set { velocity = value; }
         }
 
         public override void LoadContent(ContentManager Content, InputManager inputManager)
@@ -98,11 +104,18 @@ namespace XNAServerClient
             if (inputManager.KeyDown(Keys.Left, Keys.A) && controlByPlayer)
             {
                 position = new Vector2(position.X - moveSpeed, position.Y);
+                velocity = new Vector2(-moveSpeed, 0);
             }
             else if (inputManager.KeyDown(Keys.Right, Keys.D) && controlByPlayer)
             {
                 position = new Vector2(position.X + moveSpeed, position.Y);
+                velocity = new Vector2(moveSpeed, 0);
             }
+            else if (controlByPlayer)
+            { 
+                velocity = new Vector2(0, 0); 
+            }
+
 
             if (position.X < 0)
                 position = new Vector2(0, position.Y);

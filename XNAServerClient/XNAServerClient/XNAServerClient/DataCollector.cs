@@ -96,17 +96,23 @@ namespace XNAServerClient
 
                     //platform height is 25, so check -12 to 12 around origin.y
                     if ((ballOrigin.Y - platformOrigin_player.Y) <= -12)
-                        ball.Velocity = new Vector2(ball.Velocity.X, ball.Velocity.Y * -1);
+                        ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y) * -1);
                     else if ((ballOrigin.Y - platformOrigin_player.Y) >= 12)
                         ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y));
                     else if (Math.Abs(ballOrigin.Y - platformOrigin_player.Y) < 12)
                         ball.Velocity = new Vector2(ball.Velocity.X * -1, ball.Velocity.Y);
 
                     //if platform is moving while collade, add extra speed to ball
-                    if (inputManager.KeyDown(Keys.Left, Keys.A))
-                        ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
-                    else if (inputManager.KeyDown(Keys.Right, Keys.D))
-                        ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
+                    if (platform_player.Velocity.X > 0)
+                    {
+                        if (ball.Velocity.X > 0 || ball.Velocity.X < -5)
+                            ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
+                    }
+                    else if (platform_player.Velocity.X < 0)
+                    {
+                        if (ball.Velocity.X > 5 || ball.Velocity.X < 0)
+                            ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
+                    }
                 }
             }
 
@@ -125,17 +131,23 @@ namespace XNAServerClient
 
                     //platform height is 25, so check -12 to 12 around origin.y
                     if ((ballOrigin.Y - platformOrigin_com.Y) <= -12)
-                        ball.Velocity = new Vector2(ball.Velocity.X, ball.Velocity.Y * -1);
+                        ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y) * -1);
                     else if ((ballOrigin.Y - platformOrigin_com.Y) >= 12)
                         ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y));
                     else if (Math.Abs(ballOrigin.Y - platformOrigin_com.Y) < 12)
                         ball.Velocity = new Vector2(ball.Velocity.X * -1, ball.Velocity.Y);
 
                     //if platform is moving while collade, add extra speed to ball
-                    if (inputManager.KeyDown(Keys.Left, Keys.A))
-                        ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
-                    else if (inputManager.KeyDown(Keys.Right, Keys.D))
-                        ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
+                    if (platform_com.Velocity.X > 0)
+                    {
+                        if (ball.Velocity.X > 0 || ball.Velocity.X < -5)
+                            ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
+                    }
+                    else if (platform_com.Velocity.X < 0)
+                    {
+                        if (ball.Velocity.X > 5 || ball.Velocity.X < 0)
+                            ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
+                    }
                 }
             }
 

@@ -43,7 +43,7 @@ namespace XNAServerClient
             ScreenManager.Instance.Initialize();
 
             /* set screen size */
-            ScreenManager.Instance.Dimensions = new Vector2(580, 900);
+            ScreenManager.Instance.Dimensions = new Vector2(580, 800);
             //ScreenManager.Instance.Dimensions = new Vector2(1200, 900);
             graphics.PreferredBackBufferWidth = (int)ScreenManager.Instance.Dimensions.X;
             graphics.PreferredBackBufferHeight = (int)ScreenManager.Instance.Dimensions.Y;

@@ -37,21 +37,29 @@ namespace XNAServerClient
         PacketReader packetReader;
         bool isServer;
 
+        bool lag;
+
         enum GameState { Menu, FindGame, PlayGame }
         enum SessionProperty { GameMode, SkillLevel, ScoreToWin }
         enum GameMode { Practice, Timed, CaptureTheFlag }
         enum SkillLevel { Beginner, Intermediate, Advanced }
         enum PacketType { Enter, Leave, Data }
 
-        public struct AppDataUnit
-        {
-            /* 'h' for host, 'k' for online gamer */
-            Char hostTag;
-            Vector2 ballPos;
-            Vector2 ballVel;
-            Vector2 remotePlatformPos;
-            Vector2 remotePlatformVel;
-        }
+        //public static struct AppDataUnit
+        //{
+        //    /* 'h' for host, 'k' for online gamer, 'l'indicates lagging tag */
+        //    Char hostTag;
+        //    Vector2 ballPos;
+        //    Vector2 ballVel;
+        //    Vector2 remotePlatformPos;
+        //    Vector2 remotePlatformVel;
+        //}
+        Char hostTag;
+        Vector2 ballPos;
+        Vector2 ballVel;
+        Vector2 remotePlatformPos;
+        Vector2 remotePlatformVel;
+
 
         #endregion
 
@@ -80,6 +88,8 @@ namespace XNAServerClient
             sessionIndex = 0;
             packetReader = new PacketReader();
             packetWriter = new PacketWriter();
+
+            lag = false;
         }
 
         public override void UnloadContent()
@@ -475,7 +485,14 @@ namespace XNAServerClient
                     {
                         foreach (LocalNetworkGamer gamer in session.LocalGamers)
                         {
-                            packetWriter.Write(clearColor.ToVector4());
+                            if (isServer)
+                                packetWriter.Write('h');
+                            else
+                                packetWriter.Write('k');
+                            packetWriter.Write(ball.Position);
+                            packetWriter.Write(ball.Velocity);
+                            packetWriter.Write(platform_local.Position);
+                            packetWriter.Write(platform_local.Velocity);
                             
                             // Send it to all remote gamers.
                             gamer.SendData(packetWriter, SendDataOptions.InOrder);
@@ -502,12 +519,40 @@ namespace XNAServerClient
                     //Even if we are the host, we must read to clear the queue
                     gamer.ReceiveData(packetReader, out sender);
 
-                    if (!gamer.IsHost)
-                    {
-                        // Read the data and apply it to the clearColor.
-                        clearColor = new Color(packetReader.ReadVector4());
-                    }
+                    hostTag = packetReader.ReadChar();
+                    ballPos = packetReader.ReadVector2();
+                    ballVel = packetReader.ReadVector2();
+                    remotePlatformPos = packetReader.ReadVector2();
+                    remotePlatformVel = packetReader.ReadVector2();
+                    ProcessReceivedPacket();
                 }
+            }
+        }
+
+        /// <summary>
+        /// Process new update right after receive packet
+        /// host controls the ball
+        /// 
+        /// reverse opponent platform position
+        /// so it can appera on top of screen
+        /// </summary>
+        void ProcessReceivedPacket()
+        {
+            float screenWidth = ScreenManager.Instance.Dimensions.X;
+            float screenHeight = ScreenManager.Instance.Dimensions.Y;
+            if (hostTag == 'h' && !isServer)
+            {
+                ball.Position = new Vector2(screenWidth, screenHeight) - ballPos;
+                ball.Velocity = ballVel * new Vector2(-1, -1);
+                platform_remote.Position =
+                    new Vector2(screenWidth - remotePlatformPos.X - platform_remote.Dimension.X, screenHeight - platform_remote.Dimension.Y - remotePlatformPos.Y);
+                platform_remote.Velocity = remotePlatformVel * new Vector2(-1, -1);
+            }
+            else if (hostTag == 'k' && isServer)
+            {
+                platform_remote.Position =
+                    new Vector2(screenWidth - remotePlatformPos.X - platform_remote.Dimension.X, screenHeight - platform_remote.Dimension.Y - remotePlatformPos.Y);
+                platform_remote.Velocity = remotePlatformVel * new Vector2(-1, -1);
             }
         }
 
