@@ -542,8 +542,9 @@ namespace XNAServerClient
             float screenHeight = ScreenManager.Instance.Dimensions.Y;
             if (hostTag == 'h' && !isServer)
             {
-                ball.Position = new Vector2(screenWidth, screenHeight) - ballPos;
+                ball.Position = new Vector2(screenWidth, screenHeight) - (ballPos + ball.Origin) - ball.Origin;
                 ball.Velocity = ballVel * new Vector2(-1, -1);
+
                 platform_remote.Position =
                     new Vector2(screenWidth - remotePlatformPos.X - platform_remote.Dimension.X, screenHeight - platform_remote.Dimension.Y - remotePlatformPos.Y);
                 platform_remote.Velocity = remotePlatformVel * new Vector2(-1, -1);
