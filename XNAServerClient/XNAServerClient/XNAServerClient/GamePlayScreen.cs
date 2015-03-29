@@ -176,7 +176,7 @@ namespace XNAServerClient
             /* this part of code should only work for server */
             Rectangle platformRect_remote = platform_remote.Rectangle;
             Color[] platformColor_remote = platform_remote.ColorData;
-            //ball collade with plaform remote
+            //ball collade with plaform_player
             if (ballRect.Intersects(platformRect_remote))
             {
                 //check pixel collision
@@ -185,7 +185,7 @@ namespace XNAServerClient
                     //if ball center is higher than platform, ball's velocity Y is negative 
                     //if ball center is lower than platform, ball's velocity Y is positive
                     Vector2 ballOrigin = new Vector2(ball.Origin.X + ballRect.X, ball.Origin.Y + ballRect.Y);
-                    Vector2 platformOrigin_remote = new Vector2(platform_remote.Origin.X + platformRect_remote.X, platform_remote.Origin.Y + platformRect_remote.Y);
+                    Vector2 platformOrigin_remote = new Vector2(platform_remote.Origin.X + platformRect_remote.X, platform_local.Origin.Y + platformRect_remote.Y);
 
                     //platform height is 25, so check -12 to 12 around origin.y
                     if ((ballOrigin.Y - platformOrigin_remote.Y) <= -12)
@@ -198,13 +198,18 @@ namespace XNAServerClient
                     //if platform is moving while collade, add extra speed to ball
                     if (platform_remote.Velocity.X > 0)
                     {
-                        if (ball.Velocity.X > 0 || ball.Velocity.X < -5)
+                        if (ball.Velocity.X > 0 || ball.Velocity.X < -9)
                             ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
+                        /* I can only catch 22 */
+                        if (ball.Velocity.X > 22)
+                            ball.Velocity = new Vector2(22, ball.Velocity.Y);
                     }
                     else if (platform_remote.Velocity.X < 0)
                     {
-                        if (ball.Velocity.X > 5 || ball.Velocity.X < 0)
+                        if (ball.Velocity.X > 9 || ball.Velocity.X < 0)
                             ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
+                        if (ball.Velocity.X < -22)
+                            ball.Velocity = new Vector2(-22, ball.Velocity.Y);
                     }
                 }
             }
