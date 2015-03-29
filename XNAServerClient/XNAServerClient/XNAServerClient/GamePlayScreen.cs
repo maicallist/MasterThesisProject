@@ -39,6 +39,7 @@ namespace XNAServerClient
         PacketReader packetReader;
         bool isServer;
 
+        bool sending;
         bool lag;
 
         enum GameState { Menu, FindGame, PlayGame }
@@ -109,6 +110,11 @@ namespace XNAServerClient
 
         public override void Update(GameTime gameTime)
         {
+            /*
+             * only sned data when necessary
+             * collad with platform
+             */ 
+            sending = false;
             inputManager.Update();
             UpdateInput(gameTime);
 
@@ -126,6 +132,7 @@ namespace XNAServerClient
             Color[] platformColor_local = platform_local.ColorData;
             Rectangle ballRect = ball.Rectangle;
             Color[] ballColor = ball.ColorData;
+
             //ball collade with plaform_player
             if (ballRect.Intersects(platformRect_local))
             {
@@ -160,6 +167,44 @@ namespace XNAServerClient
                             ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
                         if (ball.Velocity.X < -22)
                             ball.Velocity = new Vector2(-22, ball.Velocity.Y);
+                    }
+                }
+            }
+
+
+            /* under not lagging situation */
+            /* this part of code should only work for server */
+            Rectangle platformRect_remote = platform_remote.Rectangle;
+            Color[] platformColor_remote = platform_remote.ColorData;
+            //ball collade with plaform remote
+            if (ballRect.Intersects(platformRect_remote))
+            {
+                //check pixel collision
+                if (UpdateCollision(ballRect, ballColor, platformRect_remote, platformColor_remote))
+                {
+                    //if ball center is higher than platform, ball's velocity Y is negative 
+                    //if ball center is lower than platform, ball's velocity Y is positive
+                    Vector2 ballOrigin = new Vector2(ball.Origin.X + ballRect.X, ball.Origin.Y + ballRect.Y);
+                    Vector2 platformOrigin_remote = new Vector2(platform_remote.Origin.X + platformRect_remote.X, platform_remote.Origin.Y + platformRect_remote.Y);
+
+                    //platform height is 25, so check -12 to 12 around origin.y
+                    if ((ballOrigin.Y - platformOrigin_remote.Y) <= -12)
+                        ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y) * -1);
+                    else if ((ballOrigin.Y - platformOrigin_remote.Y) >= 12)
+                        ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y));
+                    else if (Math.Abs(ballOrigin.Y - platformOrigin_remote.Y) < 12)
+                        ball.Velocity = new Vector2(ball.Velocity.X * -1, ball.Velocity.Y);
+
+                    //if platform is moving while collade, add extra speed to ball
+                    if (platform_remote.Velocity.X > 0)
+                    {
+                        if (ball.Velocity.X > 0 || ball.Velocity.X < -5)
+                            ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
+                    }
+                    else if (platform_remote.Velocity.X < 0)
+                    {
+                        if (ball.Velocity.X > 5 || ball.Velocity.X < 0)
+                            ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
                     }
                 }
             }
@@ -580,11 +625,20 @@ namespace XNAServerClient
                     gamer.ReceiveData(packetReader, out sender);
 
                     hostTag = packetReader.ReadChar();
-                    ballPos = packetReader.ReadVector2();
-                    ballVel = packetReader.ReadVector2();
-                    remotePlatformPos = packetReader.ReadVector2();
-                    remotePlatformVel = packetReader.ReadVector2();
-                    ProcessReceivedPacket();
+                    /* normal packet */
+                    /* keep reading following message */
+                    if (hostTag != 'l')
+                    {
+                        ballPos = packetReader.ReadVector2();
+                        ballVel = packetReader.ReadVector2();
+                        remotePlatformPos = packetReader.ReadVector2();
+                        remotePlatformVel = packetReader.ReadVector2();
+                        ProcessReceivedPacket();
+                    }
+                    else /* current packet indicates latencty simulation, no more packets coming in */
+                    {
+                        lag = true;
+                    }
                 }
             }
         }
@@ -600,7 +654,11 @@ namespace XNAServerClient
         {
             float screenWidth = ScreenManager.Instance.Dimensions.X;
             float screenHeight = ScreenManager.Instance.Dimensions.Y;
-            if (hostTag == 'h' && !isServer)
+
+            /* if there is no lag, we let the host decides whether a collision happens or not */
+
+            /* h tag indicates packet is from host, sync state */
+            if (hostTag == 'h' && !isServer && !lag)
             {
                 ball.Position = new Vector2(screenWidth, screenHeight) - (ballPos + ball.Origin) - ball.Origin;
                 ball.Velocity = ballVel * new Vector2(-1, -1);
@@ -609,12 +667,22 @@ namespace XNAServerClient
                     new Vector2(screenWidth - remotePlatformPos.X - platform_remote.Dimension.X, screenHeight - platform_remote.Dimension.Y - remotePlatformPos.Y);
                 platform_remote.Velocity = remotePlatformVel * new Vector2(-1, -1);
             }
-            else if (hostTag == 'k' && isServer)
+            /* k tag indicates packets is from a client */
+            /* without considering lagging, we only update remote platform position */
+            else if (hostTag == 'k' && isServer && !lag)
             {
                 platform_remote.Position =
                     new Vector2(screenWidth - remotePlatformPos.X - platform_remote.Dimension.X, screenHeight - platform_remote.Dimension.Y - remotePlatformPos.Y);
                 platform_remote.Velocity = remotePlatformVel * new Vector2(-1, -1);
             }
+
+            /* 
+             * if there was a lag, we need to enable remote prediction on both side 
+             * which should be in
+             * 
+             * void Update() 
+             * 
+             */
         }
 
         /// <summary>
