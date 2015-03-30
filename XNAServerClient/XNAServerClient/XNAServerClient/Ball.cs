@@ -24,8 +24,6 @@ namespace XNAServerClient
         Color[] textureData;
 
         int hitGround;
-        SoundEffect sound;
-        SoundEffectInstance soundInstance;
 
         public Vector2 Velocity
         {
@@ -75,16 +73,11 @@ namespace XNAServerClient
             }
             rotation = 0.0f;
             scale = 1.0f;
-            position = new Vector2(ScreenManager.Instance.Dimensions.X / 2 - ballImage.Width / 2, 
-                ScreenManager.Instance.Dimensions.Y - 100 - ballImage.Height);
+            position = new Vector2(ScreenManager.Instance.Dimensions.X / 2 - ballImage.Width / 2, 200);
             alpha = 0.0f;
             velocity = new Vector2(0, 0);
 
             hitGround = 0;
-            //sound = content.Load<SoundEffect>("buzzer");
-            //soundInstance = sound.CreateInstance();
-            //soundInstance.IsLooped = false;
-            //soundInstance.Volume = 0.5f;
         }
 
         public override void UnloadContent()

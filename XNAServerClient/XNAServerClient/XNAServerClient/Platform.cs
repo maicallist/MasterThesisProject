@@ -22,6 +22,8 @@ namespace XNAServerClient
 
         Color[] textureData;
 
+        float prevPositionX;
+
         public Rectangle Rectangle
         {
             get { return sourceRect; }
@@ -59,6 +61,11 @@ namespace XNAServerClient
             set { velocity = value; }
         }
 
+        public float MoveSpeed
+        {
+            get { return moveSpeed; }
+        }
+
         public override void LoadContent(ContentManager Content, InputManager inputManager)
         {
             base.LoadContent(Content, inputManager);
@@ -75,9 +82,11 @@ namespace XNAServerClient
             alpha = 0.0f;
             position = new Vector2(ScreenManager.Instance.Dimensions.X / 2 - platformImage.Width / 2, 
                 ScreenManager.Instance.Dimensions.Y - 20 - platformImage.Height);
+            prevPositionX = position.X;
 
             controlByPlayer = true;
             moveSpeed = 10f;
+            velocity = new Vector2(0, 0);
             dimension = new Vector2(platformImage.Width, platformImage.Height);
         }
 
@@ -101,30 +110,36 @@ namespace XNAServerClient
             else
                 alpha = 1.0f;
 
+            // update key state
             if (inputManager.KeyDown(Keys.Left, Keys.A) && controlByPlayer)
             {
                 position = new Vector2(position.X - moveSpeed, position.Y);
-                velocity = new Vector2(-moveSpeed, 0);
             }
-            else if (inputManager.KeyDown(Keys.Right, Keys.D) && controlByPlayer)
+            if (inputManager.KeyDown(Keys.Right, Keys.D) && controlByPlayer)
             {
                 position = new Vector2(position.X + moveSpeed, position.Y);
-                velocity = new Vector2(moveSpeed, 0);
-            }
-            else if (controlByPlayer)
-            { 
-                velocity = new Vector2(0, 0); 
             }
 
-
+            /* check bounds */
             if (position.X < 0)
                 position = new Vector2(0, position.Y);
             if (position.X + dimension.X > ScreenManager.Instance.Dimensions.X)
                 position = new Vector2(ScreenManager.Instance.Dimensions.X - dimension.X, position.Y);
 
+            //work out velocity base on position
+            if (prevPositionX > position.X) //moving Right
+                velocity.X = -moveSpeed;
+            else if (prevPositionX < position.X) //moving Left
+                velocity.X = moveSpeed;
+            else
+                velocity.X = 0;
+
             //update rectangle position
             sourceRect.X = (int)position.X;
             sourceRect.Y = (int)position.Y;
+
+            //update prev position
+            prevPositionX = position.X;
         }
 
         public override void Draw(SpriteBatch spriteBatch)

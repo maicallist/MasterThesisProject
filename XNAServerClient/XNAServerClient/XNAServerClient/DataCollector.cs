@@ -23,9 +23,16 @@ namespace XNAServerClient
         SpriteFont font;
 
         bool start;
-
+        //AI
+        float targetPositionX;
+        bool movePlatformCom;
+        
+        bool ballToPlayer;
+        
         /* statistics */
-
+        int ballSpeed;
+        bool platformMoving;
+        
 
         #endregion
 
@@ -51,7 +58,11 @@ namespace XNAServerClient
             ball.LoadContent(Content, inputManager);
 
             start = false;
+            targetPositionX = 0;
+            movePlatformCom = false;
 
+            ballToPlayer = false;
+            platformMoving = false;
         }
 
         public override void UnloadContent()
@@ -74,7 +85,8 @@ namespace XNAServerClient
                 {
                     /* start game */
                     start = true;
-                    ball.Velocity = new Vector2(-7, -10);
+                    ball.Velocity = new Vector2(-7, 10);
+                    ballToPlayer = false;
                 }
             }
 
@@ -96,29 +108,46 @@ namespace XNAServerClient
 
                     //platform height is 25, so check -12 to 12 around origin.y
                     if ((ballOrigin.Y - platformOrigin_player.Y) <= -12)
+                    {
                         ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y) * -1);
+                        ballToPlayer = false;
+                        //Console.WriteLine("Collading #2 " + gameTime.TotalGameTime);
+                        MovingPlatformCom();
+                    }
                     else if ((ballOrigin.Y - platformOrigin_player.Y) >= 12)
+                    {
                         ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y));
+                    }
                     else if (Math.Abs(ballOrigin.Y - platformOrigin_player.Y) < 12)
+                    {
                         ball.Velocity = new Vector2(ball.Velocity.X * -1, ball.Velocity.Y);
+                    }
 
                     //if platform is moving while collade, add extra speed to ball
                     if (platform_player.Velocity.X > 0)
                     {
                         if (ball.Velocity.X > 0 || ball.Velocity.X < -5)
                             ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
+                        /* I can only catch 22 */
+                        /* so max speed 22 */
+                        if (ball.Velocity.X > 22)
+                            ball.Velocity = new Vector2(22, ball.Velocity.Y);
                     }
                     else if (platform_player.Velocity.X < 0)
                     {
                         if (ball.Velocity.X > 5 || ball.Velocity.X < 0)
                             ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
+                        /* I can only catch 22 */
+                        /* so max speed 22 */
+                        if (ball.Velocity.X < -22)
+                            ball.Velocity = new Vector2(-22, ball.Velocity.Y);
                     }
                 }
             }
 
             Rectangle platformRect_com = platform_com.Rectangle;
             Color[] platformColor_com = platform_com.ColorData;
-            //ball collade with plaform
+            //ball collade with plaform com
             if (ballRect.Intersects(platformRect_com))
             {
                 //check pixel collision
@@ -131,11 +160,19 @@ namespace XNAServerClient
 
                     //platform height is 25, so check -12 to 12 around origin.y
                     if ((ballOrigin.Y - platformOrigin_com.Y) <= -12)
+                    {
                         ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y) * -1);
+                    }
                     else if ((ballOrigin.Y - platformOrigin_com.Y) >= 12)
+                    {
                         ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y));
+                        ballToPlayer = true;
+                        //Console.WriteLine("Collading #1 " + gameTime.TotalGameTime);
+                    }
                     else if (Math.Abs(ballOrigin.Y - platformOrigin_com.Y) < 12)
+                    {
                         ball.Velocity = new Vector2(ball.Velocity.X * -1, ball.Velocity.Y);
+                    }
 
                     //if platform is moving while collade, add extra speed to ball
                     if (platform_com.Velocity.X > 0)
@@ -149,6 +186,18 @@ namespace XNAServerClient
                             ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
                     }
                 }
+            }
+
+            //move platform com when required
+            if (movePlatformCom)
+            {
+                //we are at right position, stop moving
+                if (targetPositionX >= platform_com.Position.X && targetPositionX <= platform_com.Position.X + platform_com.Dimension.X)
+                    movePlatformCom = false;
+                else if (targetPositionX < platform_com.Position.X)
+                    platform_com.Position = new Vector2(platform_com.Position.X - platform_com.MoveSpeed, platform_com.Position.Y);
+                else if (targetPositionX > platform_com.Position.X + platform_com.Dimension.X)
+                    platform_com.Position = new Vector2(platform_com.Position.X + platform_com.MoveSpeed, platform_com.Position.Y);
             }
 
             base.Update(gameTime);
@@ -196,6 +245,53 @@ namespace XNAServerClient
                 }
             }
             return false;
+        }
+
+        /* move com platform to hit ball back */
+        public void MovingPlatformCom()
+        { 
+            // hit position at Y 20 + platform.height
+            // use current position and velocity to estimate (X, 20 + platform.height)
+            Vector2 estPosition = ball.Position;
+            //total distance ball needs to move on vertial
+            float temp = ball.Position.Y - 20 - platform_com.Dimension.Y;
+            //which takes how many updates (vertical speed, 10 per update)
+            temp = temp / 10;
+            //apply to harizontal, this coordinates is likely out side of windows
+            estPosition.X = estPosition.X + ball.Velocity.X * temp + ball.Origin.X;
+            estPosition.Y = 20 + platform_com.Dimension.Y;
+
+            int windowWidth = (int)ScreenManager.Instance.Dimensions.X;
+            int windowHeight = (int)ScreenManager.Instance.Dimensions.Y;
+
+            //search for estimate postion 
+            while (true)
+            {
+                if (estPosition.X >= ball.Origin.X && estPosition.X <= windowWidth - ball.Origin.X) //we got a collision point in window
+                {
+                    targetPositionX = estPosition.X;
+                    //we have worked out a position
+                    //now require to move
+                    movePlatformCom = true;
+                    break;
+                }
+                else if (estPosition.X > windowWidth - ball.Origin.X) //ball hits right windows bounds
+                { 
+                    //esti pos - (distance to hit right window)
+                    //distance left after ball hit right window bounds
+                    //reverse direction
+                    //estPosition.X = windowWidth - ball.Origin.X - (estPosition.X - (windowWidth - ball.Origin.X - ball.Position.X));
+
+                    estPosition.X = windowWidth - ball.Origin.X - estPosition.X + windowWidth - ball.Origin.X - ball.Position.X;
+                }
+                else if (estPosition.X < ball.Origin.X)
+                {
+                    //total distance - distance to hit window bounds
+                    //ball.Position.X - estPosition.X - ball.Position.X + ball.Origin.X
+                    //turn remaining distance to positive number
+                    estPosition.X = Math.Abs(-estPosition.X + ball.Origin.X);
+                }
+            }
         }
 
         #endregion
