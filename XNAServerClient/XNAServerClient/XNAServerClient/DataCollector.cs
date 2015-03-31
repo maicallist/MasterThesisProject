@@ -102,25 +102,25 @@ namespace XNAServerClient
                 if (UpdateCollision(ballRect, ballColor, platformRect_player, platformColor_player))
                 {
 
-                    //if platform is moving while collade, add extra speed to ball
-                    if (platform_player.Velocity.X > 0)
-                    {
-                        if (ball.Velocity.X > 0 || ball.Velocity.X < -5)
-                            ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
-                        /* I can only catch 22 */
-                        /* so max speed 22 */
-                        if (ball.Velocity.X > 22)
-                            ball.Velocity = new Vector2(22, ball.Velocity.Y);
-                    }
-                    else if (platform_player.Velocity.X < 0)
-                    {
-                        if (ball.Velocity.X > 5 || ball.Velocity.X < 0)
-                            ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
-                        /* I can only catch 22 */
-                        /* so max speed 22 */
-                        if (ball.Velocity.X < -22)
-                            ball.Velocity = new Vector2(-22, ball.Velocity.Y);
-                    }
+                    ////if platform is moving while collade, add extra speed to ball
+                    //if (platform_player.Velocity.X > 0)
+                    //{
+                    //    if (ball.Velocity.X > 0 || ball.Velocity.X < -5)
+                    //        ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
+                    //    /* I can only catch 22 */
+                    //    /* so max speed 22 */
+                    //    if (ball.Velocity.X > 22)
+                    //        ball.Velocity = new Vector2(22, ball.Velocity.Y);
+                    //}
+                    //else if (platform_player.Velocity.X < 0)
+                    //{
+                    //    if (ball.Velocity.X > 5 || ball.Velocity.X < 0)
+                    //        ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
+                    //    /* I can only catch 22 */
+                    //    /* so max speed 22 */
+                    //    if (ball.Velocity.X < -22)
+                    //        ball.Velocity = new Vector2(-22, ball.Velocity.Y);
+                    //}
 
                     //if ball center is higher than platform, ball's velocity Y is negative 
                     //if ball center is lower than platform, ball's velocity Y is positive

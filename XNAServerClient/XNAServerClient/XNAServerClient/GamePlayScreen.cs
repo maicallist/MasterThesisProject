@@ -139,6 +139,23 @@ namespace XNAServerClient
                 //check pixel collision
                 if (UpdateCollision(ballRect, ballColor, platformRect_local, platformColor_local))
                 {
+                    ////if platform is moving while collade, add extra speed to ball
+                    //if (platform_local.Velocity.X > 0)
+                    //{
+                    //    if (ball.Velocity.X > 0 || ball.Velocity.X < -9)
+                    //        ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
+                    //    /* I can only catch 22 */
+                    //    if (ball.Velocity.X > 22)
+                    //        ball.Velocity = new Vector2(22, ball.Velocity.Y);
+                    //}
+                    //else if (platform_local.Velocity.X < 0)
+                    //{
+                    //    if (ball.Velocity.X > 9 || ball.Velocity.X < 0)
+                    //        ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
+                    //    if (ball.Velocity.X < -22)
+                    //        ball.Velocity = new Vector2(-22, ball.Velocity.Y);
+                    //}
+
                     //if ball center is higher than platform, ball's velocity Y is negative 
                     //if ball center is lower than platform, ball's velocity Y is positive
                     Vector2 ballOrigin = new Vector2(ball.Origin.X + ballRect.X, ball.Origin.Y + ballRect.Y);
@@ -151,23 +168,6 @@ namespace XNAServerClient
                         ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y));
                     else if (Math.Abs(ballOrigin.Y - platformOrigin_local.Y) < 12)
                         ball.Velocity = new Vector2(ball.Velocity.X * -1, ball.Velocity.Y);
-
-                    //if platform is moving while collade, add extra speed to ball
-                    if (platform_local.Velocity.X > 0)
-                    {
-                        if (ball.Velocity.X > 0 || ball.Velocity.X < -9)
-                            ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
-                        /* I can only catch 22 */
-                        if (ball.Velocity.X > 22)
-                            ball.Velocity = new Vector2(22, ball.Velocity.Y);
-                    }
-                    else if (platform_local.Velocity.X < 0)
-                    {
-                        if (ball.Velocity.X > 9 || ball.Velocity.X < 0)
-                            ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
-                        if (ball.Velocity.X < -22)
-                            ball.Velocity = new Vector2(-22, ball.Velocity.Y);
-                    }
                 }
             }
 
@@ -182,6 +182,26 @@ namespace XNAServerClient
                 //check pixel collision
                 if (UpdateCollision(ballRect, ballColor, platformRect_remote, platformColor_remote))
                 {
+                    ////if platform is moving while collade, add extra speed to ball
+                    //if (platform_remote.Velocity.X > 0)
+                    //{
+                    //    if (ball.Velocity.X > 0 || ball.Velocity.X < -9)
+                    //        ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
+                    //    /* I can only catch 22 */
+                    //    /* so max speed 22 */
+                    //    if (ball.Velocity.X > 22)
+                    //        ball.Velocity = new Vector2(22, ball.Velocity.Y);
+                    //}
+                    //else if (platform_remote.Velocity.X < 0)
+                    //{
+                    //    if (ball.Velocity.X > 9 || ball.Velocity.X < 0)
+                    //        ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
+                    //    /* I can only catch 22 */
+                    //    /* so max speed 22 */
+                    //    if (ball.Velocity.X < -22)
+                    //        ball.Velocity = new Vector2(-22, ball.Velocity.Y);
+                    //}
+                    
                     //if ball center is higher than platform, ball's velocity Y is negative 
                     //if ball center is lower than platform, ball's velocity Y is positive
                     Vector2 ballOrigin = new Vector2(ball.Origin.X + ballRect.X, ball.Origin.Y + ballRect.Y);
@@ -194,26 +214,6 @@ namespace XNAServerClient
                         ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y));
                     else if (Math.Abs(ballOrigin.Y - platformOrigin_remote.Y) < 12)
                         ball.Velocity = new Vector2(ball.Velocity.X * -1, ball.Velocity.Y);
-
-                    //if platform is moving while collade, add extra speed to ball
-                    if (platform_remote.Velocity.X > 0)
-                    {
-                        if (ball.Velocity.X > 0 || ball.Velocity.X < -9)
-                            ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
-                        /* I can only catch 22 */
-                        /* so max speed 22 */
-                        if (ball.Velocity.X > 22)
-                            ball.Velocity = new Vector2(22, ball.Velocity.Y);
-                    }
-                    else if (platform_remote.Velocity.X < 0)
-                    {
-                        if (ball.Velocity.X > 9 || ball.Velocity.X < 0)
-                            ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
-                        /* I can only catch 22 */
-                        /* so max speed 22 */
-                        if (ball.Velocity.X < -22)
-                            ball.Velocity = new Vector2(-22, ball.Velocity.Y);
-                    }
                 }
             }
 
