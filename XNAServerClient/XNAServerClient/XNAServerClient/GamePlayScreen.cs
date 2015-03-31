@@ -201,6 +201,7 @@ namespace XNAServerClient
                         if (ball.Velocity.X > 0 || ball.Velocity.X < -9)
                             ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
                         /* I can only catch 22 */
+                        /* so max speed 22 */
                         if (ball.Velocity.X > 22)
                             ball.Velocity = new Vector2(22, ball.Velocity.Y);
                     }
@@ -208,6 +209,8 @@ namespace XNAServerClient
                     {
                         if (ball.Velocity.X > 9 || ball.Velocity.X < 0)
                             ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
+                        /* I can only catch 22 */
+                        /* so max speed 22 */
                         if (ball.Velocity.X < -22)
                             ball.Velocity = new Vector2(-22, ball.Velocity.Y);
                     }
@@ -663,6 +666,15 @@ namespace XNAServerClient
             /* if there is no lag, we let the host decides whether a collision happens or not */
 
             /* h tag indicates packet is from host, sync state */
+            /* remote side position is always inverted */
+            /* for non host, we also need to invert ball position */
+
+            //Ball position may not inverted perfectly, I feel
+            /* 
+             
+             Waiting to be further tested!!!
+             
+             */
             if (hostTag == 'h' && !isServer && !lag)
             {
                 ball.Position = new Vector2(screenWidth, screenHeight) - (ballPos + ball.Origin) - ball.Origin;
