@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
@@ -27,11 +28,19 @@ namespace XNAServerClient
         float targetPositionX;
         bool movePlatformCom;
         
-        bool ballToPlayer;
+        
         
         /* statistics */
-        int ballSpeed;
+        bool ballToPlayer;
         bool platformMoving;
+
+        //three arraylists
+        //store : GameTime, InfoName, data
+        ArrayList timeTag;
+        ArrayList info;
+        ArrayList data;
+
+        
         
 
         #endregion
@@ -56,13 +65,19 @@ namespace XNAServerClient
 
             ball = new Ball();
             ball.LoadContent(Content, inputManager);
-
+            //inital AI
             start = false;
             targetPositionX = 0;
             movePlatformCom = false;
-
+            //inital statistics collection
+            
             ballToPlayer = false;
             platformMoving = false;
+
+            timeTag = new ArrayList();
+            info = new ArrayList();
+            data = new ArrayList();
+
         }
 
         public override void UnloadContent()
@@ -144,7 +159,31 @@ namespace XNAServerClient
                         ball.Velocity = new Vector2(ball.Velocity.X * -1, ball.Velocity.Y);
                     }
 
-                    
+                    /* 
+                     * 0.
+                     * after check collision
+                     * we need to collect some data
+                     * 
+                     * ball center position and platform center position
+                     * above two reveal which part of platform player tends to hit ball (center or close to edge)
+                     * 
+                     * ball velocity
+                     * if we can fix AI, we can apply different speed to ball, see how player performs 
+                     * 
+                     */
+                    TimeSpan current = gameTime.TotalGameTime;
+                    //ball origin
+                    timeTag.Add(current);
+                    info.Add("ballOrigin");
+                    data.Add(ballOrigin.X + "," + ballOrigin.Y);
+                    //player platform origin
+                    timeTag.Add(current);
+                    info.Add("platOrigin");
+                    data.Add(platformOrigin_player.X + "," + platformOrigin_player.Y);
+                    //ball velocity
+                    timeTag.Add(current);
+                    info.Add("ballVel");
+                    data.Add(ball.Velocity.X + "," + ball.Velocity.Y);
                 }
             }
 
@@ -279,6 +318,11 @@ namespace XNAServerClient
                     break;
                 }
                 else if (estPosition.X > windowWidth) //ball hits right windows bounds
+                    /*
+                     * note 
+                     * casuing imperfect 
+                     * waiting to be further investigated 
+                     */
                 { 
                     //esti pos - (distance to hit right window)
                     //distance left after ball hit right window bounds
