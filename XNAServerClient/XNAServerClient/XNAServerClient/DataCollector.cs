@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using System.Text;
+using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -24,6 +25,7 @@ namespace XNAServerClient
         SpriteFont font;
 
         bool start;
+        bool end;
         //AI
         float targetPositionX;
         bool movePlatformCom;
@@ -31,7 +33,7 @@ namespace XNAServerClient
         
         
         /* statistics */
-        bool ballToPlayer;
+        
         bool platformMoving;
 
         //three arraylists
@@ -43,8 +45,8 @@ namespace XNAServerClient
         ArrayList data;
 
         //how many times ball hits player platform 
-        int rounds; 
-        
+        int rounds;
+        bool dataCollect;
 
         #endregion
 
@@ -70,14 +72,16 @@ namespace XNAServerClient
             ball.LoadContent(Content, inputManager);
             //inital AI
             start = false;
+            end = false;
+
             targetPositionX = 0;
             movePlatformCom = false;
             //inital statistics collection
             
-            ballToPlayer = false;
             platformMoving = false;
             rounds = 0;
-            
+            dataCollect = false;
+
             timeTag = new ArrayList();
             info = new ArrayList();
             data = new ArrayList();
@@ -105,7 +109,6 @@ namespace XNAServerClient
                     /* start game */
                     start = true;
                     ball.Velocity = new Vector2(-7, 10);
-                    ballToPlayer = false;
                 }
             }
 
@@ -164,17 +167,19 @@ namespace XNAServerClient
                     current = gameTime.TotalGameTime;
                     //ball origin, player platform origin, ball velocity
                     timeTag.Add(current);
-                    info.Add("Collision");
-                    data.Add("BallOrigin " + ballOrigin.X + "," + ballOrigin.Y + " PlatOrigin " 
-                        + platformOrigin_player.X + "," + platformOrigin_player.Y + " BallVel "
-                        + ball.Velocity.X + "," + ball.Velocity.Y);
+                    if (ball.Velocity.X == 0 && ball.Velocity.Y == 0)
+                        info.Add("GameStart");
+                    else
+                        info.Add("Collision");
+                    data.Add("BallOrigin " + ballOrigin.X + "," + ballOrigin.Y + " PlatOrigin "
+                            + platformOrigin_player.X + "," + platformOrigin_player.Y + " BallVel "
+                            + ball.Velocity.X + "," + ball.Velocity.Y);
                     rounds++;
                     //see how collision change ball state
                     //platform height is 25, so check -12 to 12 around origin.y
                     if ((ballOrigin.Y - platformOrigin_player.Y) <= -12)
                     {
                         ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y) * -1);
-                        ballToPlayer = false;
                         //Console.WriteLine("Collading #2 " + gameTime.TotalGameTime);
                         MovingPlatformCom();
                     }
@@ -210,7 +215,6 @@ namespace XNAServerClient
                     else if ((ballOrigin.Y - platformOrigin_com.Y) >= 12)
                     {
                         ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y));
-                        ballToPlayer = true;
                         //Console.WriteLine("Collading #1 " + gameTime.TotalGameTime);
                     }
                     else if (Math.Abs(ballOrigin.Y - platformOrigin_com.Y) < 12)
@@ -252,17 +256,75 @@ namespace XNAServerClient
             platform_com.Update(gameTime);
             platform_player.Update(gameTime);
 
+            /* check game end condition */
+            //if part of ball image is below screen, then game end
+            if (ball.Position.Y + ball.ImageHeight > ScreenManager.Instance.Dimensions.Y)
+            {
+                //pop in end game state
+                current = gameTime.TotalGameTime;
+                timeTag.Add(current);
+                info.Add("GameEnd");
+                data.Add("BallPos " + ball.Position.X + "," + ball.Position.Y 
+                    + " PlatPos " + platform_player.Position.X + "," + platform_player.Position.Y 
+                    + " BallVel " + ball.Velocity.X + "," + ball.Velocity.Y 
+                    + " Rounds " + (rounds-1) );
+                /// <note>
+                /// round - 1
+                /// somehow, program goes through collision code(where round++)
+                /// before I start game, after screen loading
+                /// </note> 
+
+
+
+                //clear some states
+                start = false;
+                end = true;
+                
+                //forze game state
+                ball.Velocity = new Vector2(0, 0);
+                platform_player.ControlByPlayer = false;
+
+                if (!dataCollect)
+                {
+                    dataCollect = true;
+                    //serilize data
+                    //output path - file name
+                    //see bin/x86/debug/
+                    string path = @".\Data.txt";
+
+                    //check file existance
+                    if (!File.Exists(path))
+                        File.Create(path).Dispose();
+                    //file exist
+                    if (File.Exists(path))
+                    {
+                        //append data  
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(path, true))
+                        {
+                            string str;
+                            for (int i = 0; i < timeTag.Count; i++)
+                            {
+                                str = timeTag[i] + "\t" + info[i] + "\t" + data[i];
+                                file.WriteLine(str);
+                            }
+                        }
+                    }
+                }
+
+                
+            }
+
             //collecting platform status
 
             /* no key is pressed, platform is not moving */
 
-            /// <attintion>
+            /// <attention>
             ///
             /// Following part is written in fixed value
             /// change ball velocity if we tend to move ball
             /// to any directions
             /// 
-            /// </attintion>
+            /// </attention>
             if (inputManager.KeyUp(Keys.Left) && inputManager.KeyUp(Keys.Right))
             {
                 if (platformMoving)

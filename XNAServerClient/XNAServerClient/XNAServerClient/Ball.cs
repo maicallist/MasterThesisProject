@@ -57,6 +57,11 @@ namespace XNAServerClient
             get { return hitGround; }
         }
 
+        public int ImageHeight
+        {
+            get { return ballImage.Height; }
+        }
+
         public override void LoadContent(ContentManager Content, InputManager inputManager)
         {
             base.LoadContent(Content, inputManager);
@@ -108,10 +113,10 @@ namespace XNAServerClient
             else if (position.Y + ballImage.Height >= ScreenManager.Instance.Dimensions.Y)
             {
                 //hit ground, game end
-                
+                //do nothing, end game in play screen
 
                 //if you don't want end game, comment above and comment out below
-                velocity = new Vector2(velocity.X, velocity.Y * -1);
+                //velocity = new Vector2(velocity.X, velocity.Y * -1);
             }
             
             //move ball base on velocity

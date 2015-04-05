@@ -24,10 +24,6 @@ namespace XNAServerClient
         Color[] textureData;
 
         float prevPositionX;
-        //data collection
-        bool recording;
-        KeyboardState keyboard;
-
 
         public Rectangle Rectangle
         {
@@ -95,8 +91,6 @@ namespace XNAServerClient
             velocity = new Vector2(0, 0);
             dimension = new Vector2(platformImage.Width, platformImage.Height);
 
-            //data collection
-            recording = false;
         }
 
         public override void UnloadContent()
