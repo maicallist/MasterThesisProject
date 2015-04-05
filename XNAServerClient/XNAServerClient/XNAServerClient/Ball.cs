@@ -107,9 +107,11 @@ namespace XNAServerClient
                 velocity = new Vector2(velocity.X, velocity.Y * -1);
             else if (position.Y + ballImage.Height >= ScreenManager.Instance.Dimensions.Y)
             {
+                //hit ground, game end
+                
+
+                //if you don't want end game, comment above and comment out below
                 velocity = new Vector2(velocity.X, velocity.Y * -1);
-                hitGround++;
-                //soundInstance.Play();
             }
             
             //move ball base on velocity

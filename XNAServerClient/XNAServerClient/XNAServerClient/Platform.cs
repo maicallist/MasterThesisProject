@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
@@ -23,6 +24,10 @@ namespace XNAServerClient
         Color[] textureData;
 
         float prevPositionX;
+        //data collection
+        bool recording;
+        KeyboardState keyboard;
+
 
         public Rectangle Rectangle
         {
@@ -66,6 +71,7 @@ namespace XNAServerClient
             get { return moveSpeed; }
         }
 
+
         public override void LoadContent(ContentManager Content, InputManager inputManager)
         {
             base.LoadContent(Content, inputManager);
@@ -88,6 +94,9 @@ namespace XNAServerClient
             moveSpeed = 10f;
             velocity = new Vector2(0, 0);
             dimension = new Vector2(platformImage.Width, platformImage.Height);
+
+            //data collection
+            recording = false;
         }
 
         public override void UnloadContent()

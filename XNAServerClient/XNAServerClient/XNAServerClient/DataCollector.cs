@@ -36,11 +36,14 @@ namespace XNAServerClient
 
         //three arraylists
         //store : GameTime, InfoName, data
+        TimeSpan current;
+
         ArrayList timeTag;
         ArrayList info;
         ArrayList data;
 
-        
+        //how many times ball hits player platform 
+        int rounds; 
         
 
         #endregion
@@ -73,7 +76,8 @@ namespace XNAServerClient
             
             ballToPlayer = false;
             platformMoving = false;
-
+            rounds = 0;
+            
             timeTag = new ArrayList();
             info = new ArrayList();
             data = new ArrayList();
@@ -137,11 +141,35 @@ namespace XNAServerClient
                     //        ball.Velocity = new Vector2(-22, ball.Velocity.Y);
                     //}
 
+                    
+
                     //if ball center is higher than platform, ball's velocity Y is negative 
                     //if ball center is lower than platform, ball's velocity Y is positive
+                    //these two param used for statistics and collision 
                     Vector2 ballOrigin = new Vector2(ball.Origin.X + ballRect.X, ball.Origin.Y + ballRect.Y);
                     Vector2 platformOrigin_player = new Vector2(platform_player.Origin.X + platformRect_player.X, platform_player.Origin.Y + platformRect_player.Y);
 
+                    /* 
+                     * 
+                     * before collision change ball state
+                     * we need to collect some data
+                     * 
+                     * ball center position and platform center position
+                     * above two reveal which part of platform player tends to hit ball (center or close to edge)
+                     * 
+                     * ball velocity
+                     * if we can fix AI, we can apply different speed to ball, see how player performs 
+                     * 
+                     */
+                    current = gameTime.TotalGameTime;
+                    //ball origin, player platform origin, ball velocity
+                    timeTag.Add(current);
+                    info.Add("Collision");
+                    data.Add("BallOrigin " + ballOrigin.X + "," + ballOrigin.Y + " PlatOrigin " 
+                        + platformOrigin_player.X + "," + platformOrigin_player.Y + " BallVel "
+                        + ball.Velocity.X + "," + ball.Velocity.Y);
+                    rounds++;
+                    //see how collision change ball state
                     //platform height is 25, so check -12 to 12 around origin.y
                     if ((ballOrigin.Y - platformOrigin_player.Y) <= -12)
                     {
@@ -158,32 +186,6 @@ namespace XNAServerClient
                     {
                         ball.Velocity = new Vector2(ball.Velocity.X * -1, ball.Velocity.Y);
                     }
-
-                    /* 
-                     * 0.
-                     * after check collision
-                     * we need to collect some data
-                     * 
-                     * ball center position and platform center position
-                     * above two reveal which part of platform player tends to hit ball (center or close to edge)
-                     * 
-                     * ball velocity
-                     * if we can fix AI, we can apply different speed to ball, see how player performs 
-                     * 
-                     */
-                    TimeSpan current = gameTime.TotalGameTime;
-                    //ball origin
-                    timeTag.Add(current);
-                    info.Add("ballOrigin");
-                    data.Add(ballOrigin.X + "," + ballOrigin.Y);
-                    //player platform origin
-                    timeTag.Add(current);
-                    info.Add("platOrigin");
-                    data.Add(platformOrigin_player.X + "," + platformOrigin_player.Y);
-                    //ball velocity
-                    timeTag.Add(current);
-                    info.Add("ballVel");
-                    data.Add(ball.Velocity.X + "," + ball.Velocity.Y);
                 }
             }
 
@@ -230,6 +232,9 @@ namespace XNAServerClient
                 }
             }
 
+            
+
+            // AI 
             //move platform com when required
             if (movePlatformCom)
             {
@@ -246,6 +251,62 @@ namespace XNAServerClient
             ball.Update(gameTime);
             platform_com.Update(gameTime);
             platform_player.Update(gameTime);
+
+            //collecting platform status
+
+            /* no key is pressed, platform is not moving */
+
+            /// <attintion>
+            ///
+            /// Following part is written in fixed value
+            /// change ball velocity if we tend to move ball
+            /// to any directions
+            /// 
+            /// </attintion>
+            if (inputManager.KeyUp(Keys.Left) && inputManager.KeyUp(Keys.Right))
+            {
+                if (platformMoving)
+                {
+                    //update some states when stop move
+                    platformMoving = false;
+                    platform_player.Velocity = new Vector2(0, 0);
+                    
+                    //collect some data, when platform stop
+                    //where the ball is, where ball is moving to
+                    //where platform stoped (platform current position)
+                    current = gameTime.TotalGameTime;
+                    timeTag.Add(current);
+                    info.Add("PlatformStop");
+                    data.Add("PlaXCoor " + platform_player.Position.X + " BallPos " + ball.Position.X + "," + ball.Position.Y
+                        + " BallVel " + ball.Velocity.X + "," + ball.Velocity.Y);
+                }
+            }
+            else
+            {
+                //platform wasn't moving in last update()
+                //now it starts moving
+                if (!platformMoving)
+                {
+                    //update state
+                    platformMoving = true;
+                    //work out velocity
+                    if (inputManager.KeyDown(Keys.Left) && inputManager.KeyDown(Keys.Right))
+                        platform_player.Velocity = new Vector2(0, 0);
+                    else if (inputManager.KeyDown(Keys.Left) && inputManager.KeyUp(Keys.Right))
+                        platform_player.Velocity = new Vector2(-10, 0);
+                    else if (inputManager.KeyDown(Keys.Right) && inputManager.KeyUp(Keys.Left))
+                        platform_player.Velocity = new Vector2(10, 0);
+
+                    //collect some data, when player starts to move platform
+                    //where the ball is, where the ball is heading to
+                    //ball speed, platform pos
+                    current = gameTime.TotalGameTime;
+                    timeTag.Add(current);
+                    info.Add("PlatformMove");
+                    data.Add("PlaXCoor " + platform_player.Position.X + " BallPos " + ball.Position.X + "," + ball.Position.Y
+                        + " BallVel " + ball.Velocity.X + "," + ball.Velocity.Y);
+                }
+            }
 
         }
 

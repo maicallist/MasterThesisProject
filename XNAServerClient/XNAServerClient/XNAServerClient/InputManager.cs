@@ -80,5 +80,23 @@ namespace XNAServerClient
             }
             return false;
         }
+
+        public bool KeyUp(Keys key)
+        {
+            if (keyState.IsKeyUp(key))
+                return true;
+            else
+                return false;
+        }
+
+        public bool KeyUp(params Keys[] keys)
+        {
+            foreach (Keys key in keys)
+            {
+                if (keyState.IsKeyUp(key))
+                    return true;
+            }
+            return false;
+        }
     }
 }
