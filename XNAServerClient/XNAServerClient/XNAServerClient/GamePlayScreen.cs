@@ -63,6 +63,8 @@ namespace XNAServerClient
         Vector2 remotePlatformPos;
         Vector2 remotePlatformVel;
 
+        bool localPlatformMoving;
+        bool sendPacket;
 
         #endregion
 
@@ -85,6 +87,7 @@ namespace XNAServerClient
             ball.LoadContent(Content, inputManager);
 
             gameStart = false;
+            localPlatformMoving = false;
 
             /* 4.0 */
             color = Color.White;
@@ -94,7 +97,10 @@ namespace XNAServerClient
             packetReader = new PacketReader();
             packetWriter = new PacketWriter();
 
+            sendPacket = true;
+
             lag = false;
+            
         }
 
         public override void UnloadContent()
@@ -113,8 +119,9 @@ namespace XNAServerClient
             /*
              * only sned data when necessary
              * collad with platform
-             */ 
-            sending = false;
+             */
+            sendPacket = false;
+
             inputManager.Update();
             UpdateInput(gameTime);
 
@@ -124,6 +131,33 @@ namespace XNAServerClient
                 {
                     ball.Velocity = new Vector2(-7, -10);
                     gameStart = true;
+                }
+            }
+
+            //update local platform velocity for transmission
+            if (inputManager.KeyUp(Keys.Left) && inputManager.KeyUp(Keys.Right))
+            {
+                if (localPlatformMoving)
+                {
+                    //update some states when stop move
+                    localPlatformMoving = false;
+                }
+            }
+            else
+            {
+                //platform wasn't moving in last update()
+                //now it starts moving
+                if (!localPlatformMoving)
+                {
+                    //update state
+                    localPlatformMoving = true;
+                    //work out velocity
+                    if (inputManager.KeyDown(Keys.Left) && inputManager.KeyDown(Keys.Right))
+                        platform_local.Velocity = new Vector2(0, 0);
+                    else if (inputManager.KeyDown(Keys.Left) && inputManager.KeyUp(Keys.Right))
+                        platform_local.Velocity = new Vector2(-10, 0);
+                    else if (inputManager.KeyDown(Keys.Right) && inputManager.KeyUp(Keys.Left))
+                        platform_local.Velocity = new Vector2(10, 0);
                 }
             }
 
@@ -221,6 +255,9 @@ namespace XNAServerClient
             ball.Update(gameTime);
             platform_local.Update(gameTime);
             platform_remote.Update(gameTime);
+
+            TimeSpan lag = new TimeSpan(0, 0, 0, 0, 800);
+            session.SimulatedLatency = lag;
 
             if (session != null)
             {
