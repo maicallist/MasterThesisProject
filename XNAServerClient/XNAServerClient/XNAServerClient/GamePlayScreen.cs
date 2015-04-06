@@ -256,8 +256,11 @@ namespace XNAServerClient
             platform_local.Update(gameTime);
             platform_remote.Update(gameTime);
 
-            TimeSpan lag = new TimeSpan(0, 0, 0, 0, 800);
-            session.SimulatedLatency = lag;
+            if (session != null)
+            {
+                TimeSpan lag = new TimeSpan(0, 0, 0, 0, 800);
+                session.SimulatedLatency = lag;
+            }
 
             if (session != null)
             {
