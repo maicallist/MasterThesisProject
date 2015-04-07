@@ -171,8 +171,8 @@ namespace XNAServerClient
                         info.Add("GameStart");
                     else
                         info.Add("Collision");
-                    data.Add("BallOrigin " + ballOrigin.X + "," + ballOrigin.Y + " PlatOrigin "
-                            + platformOrigin_player.X + "," + platformOrigin_player.Y + " BallVel "
+                    data.Add("BallOrigin\t" + ballOrigin.X + "," + ballOrigin.Y + "\tPlatOrigin\t"
+                            + platformOrigin_player.X + "," + platformOrigin_player.Y + "\tBallVel\t"
                             + ball.Velocity.X + "," + ball.Velocity.Y);
                     rounds++;
                     //see how collision change ball state
@@ -264,10 +264,10 @@ namespace XNAServerClient
                 current = gameTime.TotalGameTime;
                 timeTag.Add(current);
                 info.Add("GameEnd");
-                data.Add("BallPos " + ball.Position.X + "," + ball.Position.Y 
-                    + " PlatPos " + platform_player.Position.X + "," + platform_player.Position.Y 
-                    + " BallVel " + ball.Velocity.X + "," + ball.Velocity.Y 
-                    + " Rounds " + (rounds-1) );
+                data.Add("BallPos\t" + ball.Position.X + "," + ball.Position.Y 
+                    + "\tPlatPos\t" + platform_player.Position.X + "," + platform_player.Position.Y 
+                    + "\tBallVel\t" + ball.Velocity.X + "," + ball.Velocity.Y 
+                    + "\tRounds\t" + (rounds-1) );
                 /// <note>
                 /// round - 1
                 /// somehow, program goes through collision code(where round++)
@@ -339,8 +339,8 @@ namespace XNAServerClient
                     current = gameTime.TotalGameTime;
                     timeTag.Add(current);
                     info.Add("PlatformStop");
-                    data.Add("PlaXCoor " + platform_player.Position.X + " BallPos " + ball.Position.X + "," + ball.Position.Y
-                        + " BallVel " + ball.Velocity.X + "," + ball.Velocity.Y);
+                    data.Add("BallPos\t" + ball.Position.X + "," + ball.Position.Y + "\tPlaXCoor\t" + platform_player.Position.X
+                        + "\tBallVel\t" + ball.Velocity.X + "," + ball.Velocity.Y);
                 }
             }
             else
@@ -365,8 +365,8 @@ namespace XNAServerClient
                     current = gameTime.TotalGameTime;
                     timeTag.Add(current);
                     info.Add("PlatformMove");
-                    data.Add("PlaXCoor " + platform_player.Position.X + " BallPos " + ball.Position.X + "," + ball.Position.Y
-                        + " BallVel " + ball.Velocity.X + "," + ball.Velocity.Y);
+                    data.Add("BallPos\t" + ball.Position.X + "," + ball.Position.Y + "\tPlaXCoor\t" + platform_player.Position.X
+                        + "\tBallVel\t" + ball.Velocity.X + "," + ball.Velocity.Y);
                 }
             }
 
