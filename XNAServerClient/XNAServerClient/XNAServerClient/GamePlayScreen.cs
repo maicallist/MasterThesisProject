@@ -299,18 +299,21 @@ namespace XNAServerClient
             base.Update(gameTime);
             ball.Update(gameTime);
             platform_local.Update(gameTime);
-            platform_remote.Update(gameTime);
             //update remote platform
             if (remotePlatformVel != null)
-                platform_remote.Position += (remotePlatformVel * new Vector2(-1, -1));
+                platform_remote.Position = new Vector2(platform_remote.Position.X + remotePlatformVel.X,
+                    platform_remote.Position.Y);
+            Console.WriteLine(remotePlatformVel.X);
+            platform_remote.Update(gameTime);
+            
 
 
             //testing lag below
-            if (session != null)
-            {
-                TimeSpan lagh = new TimeSpan(0, 0, 0, 0, 800);
-                session.SimulatedLatency = lagh;
-            }
+            //if (session != null)
+            //{
+            //    TimeSpan lagh = new TimeSpan(0, 0, 0, 0, 800);
+            //    session.SimulatedLatency = lagh;
+            //}
 
             if (session != null)
             {
@@ -743,7 +746,7 @@ namespace XNAServerClient
                     /* normal packet */
                     /* keep reading following message */
 
-                    if (hostTag != 'l')
+                    if ((hostTag == 'k' && isServer) || (hostTag == 'h' && !isServer))
                     {
                         ballPos = packetReader.ReadVector2();
                         ballVel = packetReader.ReadVector2();
@@ -751,7 +754,7 @@ namespace XNAServerClient
                         remotePlatformVel = packetReader.ReadVector2();
                         ProcessReceivedPacket();
                     }
-                    else 
+                    else if (hostTag == 'l')
                     {
                         /* current packet indicates latencty simulation, no more packets coming in */
                         /* or indicate latency has returned to normal */
@@ -885,7 +888,7 @@ namespace XNAServerClient
         {
             //this method allows to reduce packet sending rate
             //remote platform moves based on last updated remotePlatformVel
-            platform_remote.Position += remotePlatformVel;
+
             //Console.WriteLine("Dead Reckoning : " + platform_remote.Position.X + " with " + remotePlatformVel.X);
         }
 

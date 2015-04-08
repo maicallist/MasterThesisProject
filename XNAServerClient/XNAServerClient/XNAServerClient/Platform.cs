@@ -51,6 +51,7 @@ namespace XNAServerClient
 
         public bool ControlByPlayer
         {
+            get { return controlByPlayer; }
             set { controlByPlayer = value; }
         }
 
