@@ -302,7 +302,7 @@ namespace XNAServerClient
             platform_remote.Update(gameTime);
             //update remote platform
             if (remotePlatformVel != null)
-                platform_remote.Position += remotePlatformVel;
+                platform_remote.Position += (remotePlatformVel * new Vector2(-1, -1));
 
 
             //testing lag below
@@ -798,29 +798,20 @@ namespace XNAServerClient
              */
             if (hostTag == 'h' && !isServer && !lag)
             {
-                ballPos = new Vector2(screenWidth, screenHeight) - (ballPos + ball.Origin) - ball.Origin;
-                ball.Position = ballPos;
+                ball.Position = new Vector2(screenWidth, screenHeight) - (ballPos + ball.Origin) - ball.Origin;
+                ball.Velocity = ballVel * new Vector2(-1, -1);
 
-                ballVel = ballVel * new Vector2(-1, -1);
-                ball.Velocity = ballVel;
-
-                remotePlatformPos =
+                platform_remote.Position =
                     new Vector2(screenWidth - remotePlatformPos.X - platform_remote.Dimension.X, screenHeight - platform_remote.Dimension.Y - remotePlatformPos.Y);
-                platform_remote.Position = remotePlatformPos;
-
-                remotePlatformVel = remotePlatformVel * new Vector2(-1, -1);
-                platform_remote.Velocity = remotePlatformPos;
+                platform_remote.Velocity = remotePlatformVel * new Vector2(-1, -1);
             }
             /* k tag indicates packets is from a client */
             /* without considering lagging, we only update remote platform position */
             else if (hostTag == 'k' && isServer && !lag)
             {
-                remotePlatformPos = 
+                platform_remote.Position =
                     new Vector2(screenWidth - remotePlatformPos.X - platform_remote.Dimension.X, screenHeight - platform_remote.Dimension.Y - remotePlatformPos.Y);
-                platform_remote.Position = remotePlatformPos;
-
-                remotePlatformVel = remotePlatformVel * new Vector2(-1, -1);
-                platform_remote.Velocity = remotePlatformPos;
+                platform_remote.Velocity = remotePlatformVel * new Vector2(-1, -1);
             }
 
             /* 
