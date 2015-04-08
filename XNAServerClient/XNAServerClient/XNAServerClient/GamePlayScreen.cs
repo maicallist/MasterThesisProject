@@ -107,7 +107,7 @@ namespace XNAServerClient
 
             lag = false;
             consisCheck = false;
-            lagCompen = LagCompensation.None;
+            lagCompen = LagCompensation.DeadReckoning;
         }
 
         public override void UnloadContent()
@@ -187,7 +187,7 @@ namespace XNAServerClient
                         // do nothing, let platform flashing on screen
                         break;
                     case LagCompensation.DeadReckoning:
-                        DeadReckoning();
+                        DeadReckoningProcess();
                         break;
                     case LagCompensation.PlayPattern:
 
@@ -291,6 +291,10 @@ namespace XNAServerClient
             base.Update(gameTime);
             ball.Update(gameTime);
             platform_local.Update(gameTime);
+
+            if (remotePlatformVel != null)
+                platform_remote.Velocity = remotePlatformVel;
+            //update remote platform
             platform_remote.Update(gameTime);
 
             //testing lag below
@@ -871,6 +875,14 @@ namespace XNAServerClient
 
         public void DeadReckoning()
         {
+            //this method allows to reduce packet sending rate
+            //remote platform moves based on last updated remotePlatformVel
+            platform_remote.Position += remotePlatformVel;
+            //Console.WriteLine("Dead Reckoning : " + platform_remote.Position.X + " with " + remotePlatformVel.X);
+        }
+
+        public void DeadReckoningProcess()
+        {
             /* 
              * in this algorithm
              * what we need to do is
@@ -886,9 +898,7 @@ namespace XNAServerClient
              *   Vector2 remotePlatformPos;
              *   Vector2 remotePlatformVel;
              */
-            platform_remote.Position += remotePlatformVel;
         }
-        
         #endregion
     }
 }
