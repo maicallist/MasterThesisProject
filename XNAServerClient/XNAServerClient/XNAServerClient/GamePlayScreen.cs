@@ -107,7 +107,7 @@ namespace XNAServerClient
 
             lag = false;
             consisCheck = false;
-            lagCompen = LagCompensation.DeadReckoning;
+            lagCompen = LagCompensation.None;
         }
 
         public override void UnloadContent()
@@ -138,6 +138,7 @@ namespace XNAServerClient
                 {
                     ball.Velocity = new Vector2(-7, -10);
                     gameStart = true;
+                    sendPacket = true;
                 }
             }
 
