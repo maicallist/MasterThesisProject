@@ -301,19 +301,18 @@ namespace XNAServerClient
             platform_local.Update(gameTime);
             //update remote platform
             if (remotePlatformVel != null)
-                platform_remote.Position = new Vector2(platform_remote.Position.X + remotePlatformVel.X,
-                    platform_remote.Position.Y);
+                platform_remote.Position += (remotePlatformVel * new Vector2(-1, -1));
             Console.WriteLine(remotePlatformVel.X);
             platform_remote.Update(gameTime);
             
 
 
             //testing lag below
-            //if (session != null)
-            //{
-            //    TimeSpan lagh = new TimeSpan(0, 0, 0, 0, 800);
-            //    session.SimulatedLatency = lagh;
-            //}
+            if (session != null)
+            {
+                TimeSpan lagh = new TimeSpan(0, 0, 0, 0, 800);
+                session.SimulatedLatency = lagh;
+            }
 
             if (session != null)
             {
