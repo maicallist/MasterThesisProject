@@ -37,10 +37,12 @@ namespace XNAServerClient
         AvailableNetworkSession availableSession;
         PacketWriter packetWriter;
         PacketReader packetReader;
+        //host flag
         bool isServer;
-
-        bool sending;
+        //network state
         bool lag;
+        //lag just past, need check consistency
+        bool consisCheck;
 
         enum GameState { Menu, FindGame, PlayGame }
         enum SessionProperty { GameMode, SkillLevel, ScoreToWin }
@@ -62,9 +64,13 @@ namespace XNAServerClient
         Vector2 ballVel;
         Vector2 remotePlatformPos;
         Vector2 remotePlatformVel;
-
+        //local state
         bool localPlatformMoving;
+        //decide when to send packet
         bool sendPacket;
+        //lag compensation algorithm
+        enum LagCompensation { None, DeadReckoning, PlayPattern }
+        LagCompensation lagCompen;
 
         #endregion
 
@@ -100,7 +106,8 @@ namespace XNAServerClient
             sendPacket = true;
 
             lag = false;
-            
+            consisCheck = false;
+            lagCompen = LagCompensation.None;
         }
 
         public override void UnloadContent()
@@ -141,6 +148,8 @@ namespace XNAServerClient
                 {
                     //update some states when stop move
                     localPlatformMoving = false;
+                    platform_local.Velocity = new Vector2(0, 0);
+                    sendPacket = true;
                 }
             }
             else
@@ -158,6 +167,31 @@ namespace XNAServerClient
                         platform_local.Velocity = new Vector2(-10, 0);
                     else if (inputManager.KeyDown(Keys.Right) && inputManager.KeyUp(Keys.Left))
                         platform_local.Velocity = new Vector2(10, 0);
+                    sendPacket = true;
+                }
+            }
+
+            /*
+             * after we have updated local platform state
+             * check do we need to do anything to compensate lag
+             * 
+             */ 
+            // after receive a 'l' tag
+            // processReceivedPacket requires consistency check
+            //compensate lag
+            if (lag)
+            {
+                switch (lagCompen)
+                {
+                    case LagCompensation.None:
+                        // do nothing, let platform flashing on screen
+                        break;
+                    case LagCompensation.DeadReckoning:
+                        DeadReckoning();
+                        break;
+                    case LagCompensation.PlayPattern:
+
+                        break;
                 }
             }
 
@@ -170,6 +204,9 @@ namespace XNAServerClient
             //ball collade with plaform_player
             if (ballRect.Intersects(platformRect_local))
             {
+                //collision happens, update state to remote side
+                sendPacket = true;
+
                 //check pixel collision
                 if (UpdateCollision(ballRect, ballColor, platformRect_local, platformColor_local))
                 {
@@ -256,15 +293,33 @@ namespace XNAServerClient
             platform_local.Update(gameTime);
             platform_remote.Update(gameTime);
 
-            if (session != null)
-            {
-                TimeSpan lag = new TimeSpan(0, 0, 0, 0, 800);
-                session.SimulatedLatency = lag;
-            }
+            //testing lag below
+            //if (session != null)
+            //{
+            //    TimeSpan lag = new TimeSpan(0, 0, 0, 0, 800);
+            //    session.SimulatedLatency = lag;
+            //}
 
             if (session != null)
             {
-                SendPackets(PacketType.Data);
+                //when we have change on ball or platform, update to remote side
+
+                //generate lag here
+                //mark server lag flag after send 1st l tag
+                //mark server consisCheck after send 2nd l tag
+                
+                //we send packet in following situation
+                //no lag compensation algorithm applied
+                //collision with platform, local platform oriented
+                //platform state change, local oriented
+                if (lagCompen == LagCompensation.None || sendPacket)
+                {
+                    SendPackets(PacketType.Data);
+                    //if we send packet because some conditions are satisfied
+                    //then remove flag after send packet
+                    if (sendPacket)
+                        sendPacket = false;
+                }
                 ReceivePackets();
 
                 //Update the NetworkSession
@@ -675,6 +730,7 @@ namespace XNAServerClient
                     hostTag = packetReader.ReadChar();
                     /* normal packet */
                     /* keep reading following message */
+
                     if (hostTag != 'l')
                     {
                         ballPos = packetReader.ReadVector2();
@@ -683,9 +739,22 @@ namespace XNAServerClient
                         remotePlatformVel = packetReader.ReadVector2();
                         ProcessReceivedPacket();
                     }
-                    else /* current packet indicates latencty simulation, no more packets coming in */
+                    else 
                     {
-                        lag = true;
+                        /* current packet indicates latencty simulation, no more packets coming in */
+                        /* or indicate latency has returned to normal */
+                        //as a recevier, if lag ends, consischeck
+                        lag = !lag;
+                        consisCheck = true;
+
+                        /*
+                         * 
+                         *  ATTITION
+                         *  as receiver, may be we need send a packet
+                         *  to update server, right after lag.
+                         *  if so, do it below.
+                         */
+
                     }
                 }
             }
@@ -739,7 +808,9 @@ namespace XNAServerClient
              * 
              * void Update() 
              * 
-             */
+             * flag up in receivepacket()
+             * lag = !lag;
+             */ 
         }
 
         /// <summary>
@@ -769,10 +840,11 @@ namespace XNAServerClient
             session.SessionEnded -= new EventHandler<NetworkSessionEndedEventArgs>(session_SessionEnded);
         }
 
+        #region Handlers
         //Event Handling
         void session_GamerJoined(object sender, GamerJoinedEventArgs e)
         {
-            Console.WriteLine("A new Gamer just joined the game.");
+
         }
         void session_GamerLeft(object sender, GamerLeftEventArgs e)
         {
@@ -793,7 +865,30 @@ namespace XNAServerClient
         {
         }
         */
+        #endregion
 
+        #region Core of Project
 
+        public void DeadReckoning()
+        {
+            /* 
+             * in this algorithm
+             * what we need to do is
+             * when receive a 'l' tag
+             * we look up the previous packet
+             * calculate remote platform position
+             */
+
+            /*
+             *   Char hostTag;
+             *   Vector2 ballPos;
+             *   Vector2 ballVel;
+             *   Vector2 remotePlatformPos;
+             *   Vector2 remotePlatformVel;
+             */
+            platform_remote.Position += remotePlatformVel;
+        }
+        
+        #endregion
     }
 }

@@ -116,7 +116,7 @@ namespace XNAServerClient
                 //do nothing, end game in play screen
 
                 //if you don't want end game, comment above and comment out below
-                //velocity = new Vector2(velocity.X, velocity.Y * -1);
+                velocity = new Vector2(velocity.X, velocity.Y * -1);
             }
             
             //move ball base on velocity
