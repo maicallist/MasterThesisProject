@@ -103,11 +103,18 @@ namespace XNAServerClient
             packetReader = new PacketReader();
             packetWriter = new PacketWriter();
 
+            /* network variable */
+            hostTag = 'm';
+            ballPos = new Vector2(0, 0);
+            ballVel = new Vector2(0, 0);
+            remotePlatformPos = new Vector2(0, 0);
+            remotePlatformVel = new Vector2(0, 0);
+
             sendPacket = true;
 
             lag = false;
             consisCheck = false;
-            lagCompen = LagCompensation.None;
+            lagCompen = LagCompensation.DeadReckoning;
         }
 
         public override void UnloadContent()
@@ -292,18 +299,18 @@ namespace XNAServerClient
             base.Update(gameTime);
             ball.Update(gameTime);
             platform_local.Update(gameTime);
-
-            if (remotePlatformVel != null)
-                platform_remote.Velocity = remotePlatformVel;
-            //update remote platform
             platform_remote.Update(gameTime);
+            //update remote platform
+            if (remotePlatformVel != null)
+                platform_remote.Position += remotePlatformVel;
+
 
             //testing lag below
-            //if (session != null)
-            //{
-            //    TimeSpan lag = new TimeSpan(0, 0, 0, 0, 800);
-            //    session.SimulatedLatency = lag;
-            //}
+            if (session != null)
+            {
+                TimeSpan lagh = new TimeSpan(0, 0, 0, 0, 800);
+                session.SimulatedLatency = lagh;
+            }
 
             if (session != null)
             {
