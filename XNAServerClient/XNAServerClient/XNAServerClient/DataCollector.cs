@@ -21,7 +21,8 @@ namespace XNAServerClient
         Platform platform_com;
 
         Ball ball;
-
+        Ball test;
+        bool testReport;
         SpriteFont font;
 
         bool start;
@@ -70,6 +71,9 @@ namespace XNAServerClient
 
             ball = new Ball();
             ball.LoadContent(Content, inputManager);
+            test = new Ball();
+            test.LoadContent(Content, inputManager);
+            testReport = false;
             //inital AI
             start = false;
             end = false;
@@ -131,7 +135,7 @@ namespace XNAServerClient
                 //check pixel collision
                 if (UpdateCollision(ballRect, ballColor, platformRect_player, platformColor_player))
                 {
-
+                    testReport = true;
                     ////if platform is moving while collade, add extra speed to ball
                     //if (platform_player.Velocity.X > 0)
                     //{
@@ -251,11 +255,11 @@ namespace XNAServerClient
             if (movePlatformCom)
             {
                 //we are at right position, stop moving
-                if (targetPositionX >= platform_com.Position.X + platform_com.Dimension.X/3 && targetPositionX <= platform_com.Position.X + platform_com.Dimension.X/3*2)
+                if (targetPositionX >= platform_com.Position.X + platform_com.Dimension.X/5*2 && targetPositionX <= platform_com.Position.X + platform_com.Dimension.X/5*3)
                     movePlatformCom = false;
-                else if (targetPositionX < platform_com.Position.X + platform_com.Dimension.X / 3)
+                else if (targetPositionX < platform_com.Position.X + platform_com.Dimension.X/5*2)
                     platform_com.Position = new Vector2(platform_com.Position.X - platform_com.MoveSpeed, platform_com.Position.Y);
-                else if (targetPositionX > platform_com.Position.X + platform_com.Dimension.X / 3 * 2)
+                else if (targetPositionX > platform_com.Position.X + platform_com.Dimension.X/5*3)
                     platform_com.Position = new Vector2(platform_com.Position.X + platform_com.MoveSpeed, platform_com.Position.Y);
             }
 
@@ -264,6 +268,17 @@ namespace XNAServerClient
             platform_com.Update(gameTime);
             platform_player.Update(gameTime);
 
+            if (targetPositionX != 0)
+            {
+                test.Position = new Vector2(targetPositionX, 46);
+                test.Update(gameTime);
+                if (ball.Position.Y <= 46 && testReport)
+                {
+                    Console.WriteLine("Compare est : real - " + targetPositionX + " : " + ball.Position.X);
+                    testReport = false;
+                }
+            }
+            
             /* check game end condition */
             //if part of ball image is below screen, then game end
             if (ball.Position.Y + ball.ImageHeight > ScreenManager.Instance.Dimensions.Y)
@@ -398,6 +413,9 @@ namespace XNAServerClient
                     new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Press Space to Re-Start..").X / 2,
                         ScreenManager.Instance.Dimensions.Y / 2),
                     Color.White);
+
+            if (targetPositionX != 0)
+                test.Draw(spriteBatch);
         }
 
         #endregion
@@ -431,13 +449,13 @@ namespace XNAServerClient
         { 
             // hit position at Y 20 + platform.height
             // use current position and velocity to estimate (X, 20 + platform.height)
-            Vector2 estPosition = ball.Position;
+            Vector2 estPosition;
             //total distance ball needs to move on vertial
             float temp = ball.Position.Y - 20 - platform_com.Dimension.Y;
             //which takes how many updates (vertical speed, 10 per update)
             temp = temp / 10;
             //apply to harizontal, this coordinates is likely out side of windows
-            estPosition.X = estPosition.X + ball.Velocity.X * temp;
+            estPosition.X = ball.Position.X + ball.Velocity.X * temp;
             estPosition.Y = 20 + platform_com.Dimension.Y;
 
             int windowWidth = (int)ScreenManager.Instance.Dimensions.X;
@@ -449,30 +467,32 @@ namespace XNAServerClient
                 if (estPosition.X >= 0 && estPosition.X <= windowWidth ) //we got a collision point in window
                 {
                     targetPositionX = estPosition.X;
+
                     //we have worked out a position
                     //now require to move
                     movePlatformCom = true;
                     break;
                 }
-                else if (estPosition.X > windowWidth) //ball hits right windows bounds
-                    /*
-                     * note 
-                     * casuing imperfect 
-                     * waiting to be further investigated 
-                     */
+                else if (estPosition.X > windowWidth) //ball hits right windows border
                 { 
                     //esti pos - (distance to hit right window)
-                    //distance left after ball hit right window bounds
+                    //distance left after ball hit right window border
                     //reverse direction
                     //estPosition.X = windowWidth - ball.Origin.X - (estPosition.X - (windowWidth - ball.Origin.X - ball.Position.X));
 
-                    estPosition.X = estPosition.X - ball.Position.X - (windowWidth - ball.Position.X);
-                    estPosition.X = windowWidth - estPosition.X;
+                    /*  
+                     * explain of subtract 100 in fomular below
+                     * I currently have no idea why the estimated position is worng
+                     * but it appears everytime the ball hits right window border
+                     * my estimation position shifts to right by 100 from real position
+                     */
+
+                    estPosition.X = windowWidth + windowWidth - estPosition.X - 100;
                     //estPosition.X = windowWidth - ball.Origin.X - estPosition.X + windowWidth - ball.Origin.X - ball.Position.X;
                 }
                 else if (estPosition.X < 0)
                 {
-                    //total distance - distance to hit window bounds
+                    //total distance - distance to hit window border
                     //ball.Position.X - estPosition.X - ball.Position.X + ball.Origin.X
                     //turn remaining distance to positive number
                     estPosition.X = Math.Abs(estPosition.X);
