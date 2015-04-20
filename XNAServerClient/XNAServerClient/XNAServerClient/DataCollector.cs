@@ -106,9 +106,17 @@ namespace XNAServerClient
                 ball.Velocity = new Vector2(0, 0);
                 if (inputManager.KeyPressed(Keys.Space))
                 {
-                    /* start game */
-                    start = true;
-                    ball.Velocity = new Vector2(-7, 10);
+                    if (!start && !end)
+                    {
+                        /* start game */
+                        start = true;
+                        ball.Velocity = new Vector2(-7, 10);
+                    }
+                    else if (!start && end)
+                    {
+                        Type newClass = Type.GetType("XNAServerClient.DataCollector");
+                        ScreenManager.Instance.AddScreen((GameScreen)Activator.CreateInstance(newClass), inputManager);
+                    }
                 }
             }
 
@@ -379,10 +387,16 @@ namespace XNAServerClient
             platform_player.Draw(spriteBatch);
             platform_com.Draw(spriteBatch);
 
-            if (!start)
+            if (!start && !end)
                 spriteBatch.DrawString(font, "Press Space to Start..",
                     new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Press Space to Start..").X/2, 
                         ScreenManager.Instance.Dimensions.Y/2), 
+                    Color.White);
+
+            if (!start && end)
+                spriteBatch.DrawString(font, "Press Space to Re-Start..",
+                    new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Press Space to Re-Start..").X / 2,
+                        ScreenManager.Instance.Dimensions.Y / 2),
                     Color.White);
         }
 
