@@ -7,8 +7,8 @@
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <Options>None</Options>
-      <Output>E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\balla.xnb</Output>
-      <Time>2015-04-20T21:48:39+09:30</Time>
+      <Output>D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\balla.xnb</Output>
+      <Time>2015-03-27T17:57:21.2652813+10:30</Time>
     </Item>
     <Item>
       <Source>fade.png</Source>
@@ -16,8 +16,8 @@
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <Options>None</Options>
-      <Output>E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\fade.xnb</Output>
-      <Time>2015-04-20T21:48:39+09:30</Time>
+      <Output>D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\fade.xnb</Output>
+      <Time>2015-03-27T17:57:21.2652813+10:30</Time>
     </Item>
     <Item>
       <Source>null.png</Source>
@@ -25,8 +25,8 @@
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <Options>None</Options>
-      <Output>E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\null.xnb</Output>
-      <Time>2015-04-20T21:48:39+09:30</Time>
+      <Output>D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\null.xnb</Output>
+      <Time>2015-03-27T17:57:21.2652813+10:30</Time>
     </Item>
     <Item>
       <Source>platform.png</Source>
@@ -34,8 +34,8 @@
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <Options>None</Options>
-      <Output>E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\platform.xnb</Output>
-      <Time>2015-04-20T21:48:39+09:30</Time>
+      <Output>D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\platform.xnb</Output>
+      <Time>2015-03-27T17:57:21.2652813+10:30</Time>
     </Item>
     <Item>
       <Source>Splash\image1.png</Source>
@@ -43,8 +43,8 @@
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <Options>None</Options>
-      <Output>E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Splash\image1.xnb</Output>
-      <Time>2015-04-20T21:48:39+09:30</Time>
+      <Output>D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Splash\image1.xnb</Output>
+      <Time>2015-03-27T17:57:35.7574097+10:30</Time>
     </Item>
     <Item>
       <Source>Splash\image3.png</Source>
@@ -52,8 +52,8 @@
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <Options>None</Options>
-      <Output>E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Splash\image3.xnb</Output>
-      <Time>2015-04-20T21:48:39+09:30</Time>
+      <Output>D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Splash\image3.xnb</Output>
+      <Time>2015-03-27T17:57:35.7730097+10:30</Time>
     </Item>
     <Item>
       <Source>Font1.spritefont</Source>
@@ -61,8 +61,8 @@
       <Importer>FontDescriptionImporter</Importer>
       <Processor>FontDescriptionProcessor</Processor>
       <Options>None</Options>
-      <Output>E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Font1.xnb</Output>
-      <Time>2015-04-20T21:48:39+09:30</Time>
+      <Output>D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Font1.xnb</Output>
+      <Time>2015-03-27T17:57:21.2652813+10:30</Time>
     </Item>
     <BuildSuccessful>true</BuildSuccessful>
     <Settings>
@@ -71,10 +71,10 @@
       <TargetProfile>Reach</TargetProfile>
       <BuildConfiguration>Debug</BuildConfiguration>
       <CompressContent>false</CompressContent>
-      <RootDirectory>E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\XNAServerClient\XNAServerClient\XNAServerClientContent\</RootDirectory>
-      <LoggerRootDirectory>E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\XNAServerClient\XNAServerClient\XNAServerClient\</LoggerRootDirectory>
-      <IntermediateDirectory>E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\XNAServerClient\XNAServerClient\XNAServerClientContent\obj\x86\Debug\</IntermediateDirectory>
-      <OutputDirectory>E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\</OutputDirectory>
+      <RootDirectory>D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClientContent\</RootDirectory>
+      <LoggerRootDirectory>D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\</LoggerRootDirectory>
+      <IntermediateDirectory>D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClientContent\obj\x86\Debug\</IntermediateDirectory>
+      <OutputDirectory>D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\</OutputDirectory>
     </Settings>
     <Assemblies>
       <Assembly>

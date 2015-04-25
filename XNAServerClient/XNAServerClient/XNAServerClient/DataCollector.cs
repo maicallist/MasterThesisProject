@@ -21,20 +21,19 @@ namespace XNAServerClient
         Platform platform_com;
 
         Ball ball;
-
         SpriteFont font;
 
         bool start;
         bool end;
         //AI
         float targetPositionX;
+        //get a estimate position, move platform_com
         bool movePlatformCom;
-        
-        
-        
+
         /* statistics */
-        
+        //if playform_player is moving
         bool platformMoving;
+        
 
         //three arraylists
         //store : GameTime, InfoName, data
@@ -47,6 +46,9 @@ namespace XNAServerClient
         //how many times ball hits player platform 
         int rounds;
         bool dataCollect;
+
+        //record collision
+        int accelCounter;
 
         #endregion
 
@@ -65,7 +67,7 @@ namespace XNAServerClient
 
             platform_com = new Platform();
             platform_com.LoadContent(Content, inputManager);
-            platform_com.Position = new Vector2(ScreenManager.Instance.Dimensions.X/2 - platform_com.Dimension.X / 2, 20);
+            platform_com.Position = new Vector2(ScreenManager.Instance.Dimensions.X / 2 - platform_com.Dimension.X / 2, 20);
             platform_com.ControlByPlayer = false;
 
             ball = new Ball();
@@ -77,7 +79,7 @@ namespace XNAServerClient
             targetPositionX = 0;
             movePlatformCom = false;
             //inital statistics collection
-            
+
             platformMoving = false;
             rounds = 0;
             dataCollect = false;
@@ -86,6 +88,7 @@ namespace XNAServerClient
             info = new ArrayList();
             data = new ArrayList();
 
+            accelCounter = 0;
         }
 
         public override void UnloadContent()
@@ -110,7 +113,7 @@ namespace XNAServerClient
                     {
                         /* start game */
                         start = true;
-                        ball.Velocity = new Vector2(-7, 10);
+                        ball.Velocity = new Vector2(-5, 10);
                     }
                     else if (!start && end)
                     {
@@ -120,6 +123,19 @@ namespace XNAServerClient
                 }
             }
 
+            //update ball speed based on hits
+            //ball speeds up every 4 hits
+            if (accelCounter == 3)
+            {
+                if (ball.Velocity.X > 0)
+                    ball.Velocity = new Vector2(ball.Velocity.X + 2, ball.Velocity.Y);
+                else
+                    ball.Velocity = new Vector2(ball.Velocity.X - 2, ball.Velocity.Y);
+                accelCounter = 0;
+
+                if (ball.Velocity.Y < 0)
+                    MovingPlatformCom();
+            }
 
             Rectangle platformRect_player = platform_player.Rectangle;
             Color[] platformColor_player = platform_player.ColorData;
@@ -131,7 +147,7 @@ namespace XNAServerClient
                 //check pixel collision
                 if (UpdateCollision(ballRect, ballColor, platformRect_player, platformColor_player))
                 {
-
+                    accelCounter++;
                     ////if platform is moving while collade, add extra speed to ball
                     //if (platform_player.Velocity.X > 0)
                     //{
@@ -179,9 +195,10 @@ namespace XNAServerClient
                         info.Add("GameStart");
                     else
                         info.Add("Collision");
-                    data.Add("BallOrigin\t" + ballOrigin.X + "," + ballOrigin.Y + "\tPlatOrigin\t"
-                            + platformOrigin_player.X + "," + platformOrigin_player.Y + "\tBallVel\t"
-                            + ball.Velocity.X + "," + ball.Velocity.Y);
+                    data.Add("BallOrigin\t" + ballOrigin.X + "," + ballOrigin.Y 
+                        + "\tBallVel\t" + ball.Velocity.X + "," + ball.Velocity.Y 
+                        + "\tPlatOrigin\t" + platformOrigin_player.X + "," + platformOrigin_player.Y 
+                        + "\tPlatVel\t" + platform_player.Velocity.X + "," + platform_player.Velocity.Y);
                     rounds++;
                     //see how collision change ball state
                     //platform height is 25, so check -12 to 12 around origin.y
@@ -263,7 +280,7 @@ namespace XNAServerClient
             ball.Update(gameTime);
             platform_com.Update(gameTime);
             platform_player.Update(gameTime);
-
+            
             /* check game end condition */
             //if part of ball image is below screen, then game end
             if (ball.Position.Y + ball.ImageHeight > ScreenManager.Instance.Dimensions.Y)
@@ -273,8 +290,9 @@ namespace XNAServerClient
                 timeTag.Add(current);
                 info.Add("GameEnd");
                 data.Add("BallPos\t" + ball.Position.X + "," + ball.Position.Y 
-                    + "\tPlatPos\t" + platform_player.Position.X + "," + platform_player.Position.Y 
-                    + "\tBallVel\t" + ball.Velocity.X + "," + ball.Velocity.Y 
+                    + "\tBallVel\t" + ball.Velocity.X + "," + ball.Velocity.Y
+                    + "\tPlatCoor\t" + platform_player.Position.X + "," + platform_player.Position.Y 
+                    + "\tPlatVel\t" + platform_player.Velocity.X + "," + platform_player.Velocity.Y
                     + "\tRounds\t" + (rounds-1) );
                 /// <note>
                 /// round - 1
@@ -333,6 +351,7 @@ namespace XNAServerClient
             /// to any directions
             /// 
             /// </attention>
+            /// 
             if (inputManager.KeyUp(Keys.Left) && inputManager.KeyUp(Keys.Right))
             {
                 if (platformMoving)
@@ -340,15 +359,17 @@ namespace XNAServerClient
                     //update some states when stop move
                     platformMoving = false;
                     platform_player.Velocity = new Vector2(0, 0);
-                    
+
                     //collect some data, when platform stop
                     //where the ball is, where ball is moving to
                     //where platform stoped (platform current position)
                     current = gameTime.TotalGameTime;
                     timeTag.Add(current);
                     info.Add("PlatformStop");
-                    data.Add("BallPos\t" + ball.Position.X + "," + ball.Position.Y + "\tPlaXCoor\t" + platform_player.Position.X
-                        + "\tBallVel\t" + ball.Velocity.X + "," + ball.Velocity.Y);
+                    data.Add("BallPos\t" + ball.Position.X + "," + ball.Position.Y
+                        + "\tBallVel\t" + ball.Velocity.X + "," + ball.Velocity.Y
+                        + "\tPlaXCoor\t" + platform_player.Position.X
+                        + "\tPlatVel\t" + platform_player.Velocity.X + "," + platform_player.Velocity.Y);
                 }
             }
             else
@@ -373,11 +394,16 @@ namespace XNAServerClient
                     current = gameTime.TotalGameTime;
                     timeTag.Add(current);
                     info.Add("PlatformMove");
-                    data.Add("BallPos\t" + ball.Position.X + "," + ball.Position.Y + "\tPlaXCoor\t" + platform_player.Position.X
-                        + "\tBallVel\t" + ball.Velocity.X + "," + ball.Velocity.Y);
+                    data.Add("BallPos\t" + ball.Position.X + "," + ball.Position.Y
+                        + "\tBallVel\t" + ball.Velocity.X + "," + ball.Velocity.Y
+                        + "\tPlaXCoor\t" + platform_player.Position.X
+                        + "\tPlatVel\t" + platform_player.Velocity.X + "," + platform_player.Velocity.Y);
                 }
             }
 
+            //record if platform change direction without stop
+            //if platform current vel change from what we observed
+            //then record
         }
 
         public override void Draw(SpriteBatch spriteBatch)
@@ -431,13 +457,13 @@ namespace XNAServerClient
         { 
             // hit position at Y 20 + platform.height
             // use current position and velocity to estimate (X, 20 + platform.height)
-            Vector2 estPosition = ball.Position;
+            Vector2 estPosition;
             //total distance ball needs to move on vertial
             float temp = ball.Position.Y - 20 - platform_com.Dimension.Y;
             //which takes how many updates (vertical speed, 10 per update)
             temp = temp / 10;
             //apply to harizontal, this coordinates is likely out side of windows
-            estPosition.X = estPosition.X + ball.Velocity.X * temp;
+            estPosition.X = ball.Position.X + ball.Velocity.X * temp;
             estPosition.Y = 20 + platform_com.Dimension.Y;
 
             int windowWidth = (int)ScreenManager.Instance.Dimensions.X;
@@ -449,17 +475,13 @@ namespace XNAServerClient
                 if (estPosition.X >= 0 && estPosition.X <= windowWidth ) //we got a collision point in window
                 {
                     targetPositionX = estPosition.X;
+
                     //we have worked out a position
                     //now require to move
                     movePlatformCom = true;
                     break;
                 }
                 else if (estPosition.X > windowWidth) //ball hits right windows border
-                    /*
-                     * note 
-                     * casuing imperfect 
-                     * waiting to be further investigated 
-                     */
                 { 
                     //esti pos - (distance to hit right window)
                     //distance left after ball hit right window border
@@ -467,18 +489,18 @@ namespace XNAServerClient
                     //estPosition.X = windowWidth - ball.Origin.X - (estPosition.X - (windowWidth - ball.Origin.X - ball.Position.X));
 
                     /*  
-+                     * explain of subtract 100 in fomular below
-+                     * I currently have no idea why the estimated position is worng
-+                     * but it appears everytime the ball hits right window border
-+                     * my estimation position shifts to right by 100 from real position
-+                     */
+                     * explain of subtract 100 in fomular below
+                     * I currently have no idea why the estimated position is worng
+                     * but it appears everytime the ball hits right window border
+                     * my estimation position shifts to right by 100 from real position
+                     */
 
                     estPosition.X = windowWidth + windowWidth - estPosition.X - 100;
                     //estPosition.X = windowWidth - ball.Origin.X - estPosition.X + windowWidth - ball.Origin.X - ball.Position.X;
                 }
                 else if (estPosition.X < 0)
                 {
-                    //total distance - distance to hit window bounds
+                    //total distance - distance to hit window border
                     //ball.Position.X - estPosition.X - ball.Position.X + ball.Origin.X
                     //turn remaining distance to positive number
                     estPosition.X = Math.Abs(estPosition.X);

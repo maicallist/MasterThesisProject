@@ -114,7 +114,7 @@ namespace XNAServerClient
 
             lag = false;
             consisCheck = false;
-            lagCompen = LagCompensation.DeadReckoning;
+            lagCompen = LagCompensation.None;
         }
 
         public override void UnloadContent()
@@ -300,9 +300,16 @@ namespace XNAServerClient
             ball.Update(gameTime);
             platform_local.Update(gameTime);
             //update remote platform
-            if (remotePlatformVel != null)
-                platform_remote.Position += (remotePlatformVel * new Vector2(-1, -1));
-            Console.WriteLine(remotePlatformVel.X);
+            /* 
+             * below can help dead reckoning
+             * add lag flag after!!!!
+             * so this feature only be activated during lag
+             */
+            if (lagCompen == LagCompensation.DeadReckoning)
+            {
+                if (remotePlatformVel != null)
+                    platform_remote.Position += (remotePlatformVel * new Vector2(-1, -1));
+            }
             platform_remote.Update(gameTime);
             
 
@@ -310,7 +317,7 @@ namespace XNAServerClient
             //testing lag below
             if (session != null)
             {
-                TimeSpan lagh = new TimeSpan(0, 0, 0, 0, 800);
+                TimeSpan lagh = new TimeSpan(0, 0, 0, 0, 10);
                 session.SimulatedLatency = lagh;
             }
 
