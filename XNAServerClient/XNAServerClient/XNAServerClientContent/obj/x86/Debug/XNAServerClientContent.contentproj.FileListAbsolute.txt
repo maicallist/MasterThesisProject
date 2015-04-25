@@ -1,1 +1,1 @@
-D:\Git Workplace\MasterThesisProject\XNAServerClient\XNAServerClient\XNAServerClientContent\obj\x86\Debug\XNAServerClientContent.contentprojResolveAssemblyReference.cache
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClientContent\obj\x86\Debug\XNAServerClientContent.contentprojResolveAssemblyReference.cache
