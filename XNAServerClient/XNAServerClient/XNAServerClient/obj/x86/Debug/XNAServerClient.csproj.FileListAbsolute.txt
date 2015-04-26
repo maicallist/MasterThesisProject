@@ -1,26 +1,3 @@
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\balla.xnb
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\fade.xnb
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\null.xnb
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\platform.xnb
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Splash\image1.xnb
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Splash\image3.xnb
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Font1.xnb
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\XNAServerClient.exe
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\XNAServerClient.pdb
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\XNAServerClient.csprojResolveAssemblyReference.cache
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\Microsoft.Xna.Framework.RuntimeProfile.txt
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\XNAServerClient.exe
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\XNAServerClient.pdb
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Load\Ending.cme
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Load\Menu.cme
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Load\Splash.cme
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\balla.png
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\fade.png
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\null.png
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\platform.png
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Font1.spritefont
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Splash\image1.png
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Splash\image3.png
 D:\Git Workplace\MasterThesisProject\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Load\Ending.cme
 D:\Git Workplace\MasterThesisProject\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Load\Menu.cme
 D:\Git Workplace\MasterThesisProject\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Load\Splash.cme
@@ -69,3 +46,26 @@ E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterT
 E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\Microsoft.Xna.Framework.RuntimeProfile.txt
 E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\XNAServerClient.exe
 E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\XNAServerClient.pdb
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Load\Ending.cme
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Load\Menu.cme
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Load\Splash.cme
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\balla.xnb
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\fade.xnb
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\null.xnb
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\platform.xnb
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Splash\image1.xnb
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Splash\image3.xnb
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Font1.xnb
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\balla.png
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\fade.png
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\null.png
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\platform.png
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Font1.spritefont
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Splash\image1.png
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Splash\image3.png
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\XNAServerClient.exe
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\XNAServerClient.pdb
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\Microsoft.Xna.Framework.RuntimeProfile.txt
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\XNAServerClient.exe
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\XNAServerClient.pdb
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\XNAServerClient.csprojResolveAssemblyReference.cache

@@ -5,7 +5,7 @@ VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XNAServerClient", "XNAServerClient\XNAServerClient\XNAServerClient.csproj", "{058B63C8-E70B-4512-B0F2-CA7C19A745AD}"
 EndProject
-Project("{96E2B04D-8817-42C6-938A-82C39BA4D311}") = "XNAServerClientContent", "XNAServerClient\XNAServerClientContent\XNAServerClientContent.contentproj", "{517687B4-072B-4BD9-95B5-01EEB60B3BAD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XNAServerClientContent", "XNAServerClient\XNAServerClientContent\XNAServerClientContent.contentproj", "{517687B4-072B-4BD9-95B5-01EEB60B3BAD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -22,5 +22,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal

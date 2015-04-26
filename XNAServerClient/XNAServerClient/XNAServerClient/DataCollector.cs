@@ -100,6 +100,8 @@ namespace XNAServerClient
 
         public override void Update(GameTime gameTime)
         {
+            if (start)
+                current = gameTime.TotalGameTime - startTime;
             inputManager.Update();
 
             if (!start)
@@ -188,7 +190,7 @@ namespace XNAServerClient
                      * if we can fix AI, we can apply different speed to ball, see how player performs 
                      * 
                      */
-                    current = gameTime.TotalGameTime - startTime;
+                    //current = gameTime.TotalGameTime - startTime;
                     //ball origin, player platform origin, ball velocity
                     timeTag.Add(current);
                     if (ball.Velocity.X == 0 && ball.Velocity.Y == 0)
@@ -286,7 +288,7 @@ namespace XNAServerClient
             if (ball.Position.Y + ball.ImageHeight > ScreenManager.Instance.Dimensions.Y)
             {
                 //pop in end game state
-                current = gameTime.TotalGameTime - startTime; ;
+                //current = gameTime.TotalGameTime - startTime; ;
                 timeTag.Add(current);
                 info.Add("GameEnd");
                 data.Add("BallPos\t" + ball.Position.X + "," + ball.Position.Y
@@ -362,7 +364,7 @@ namespace XNAServerClient
                     //collect some data, when platform stop
                     //where the ball is, where ball is moving to
                     //where platform stoped (platform current position)
-                    current = gameTime.TotalGameTime - startTime; ;
+                    //current = gameTime.TotalGameTime - startTime; ;
                     timeTag.Add(current);
                     info.Add("PlatformStop");
                     data.Add("BallPos\t" + ball.Position.X + "," + ball.Position.Y
@@ -390,7 +392,7 @@ namespace XNAServerClient
                     //collect some data, when player starts to move platform
                     //where the ball is, where the ball is heading to
                     //ball speed, platform pos
-                    current = gameTime.TotalGameTime - startTime; ;
+                    //current = gameTime.TotalGameTime - startTime; ;
                     timeTag.Add(current);
                     info.Add("PlatformMove");
                     data.Add("BallPos\t" + ball.Position.X + "," + ball.Position.Y
