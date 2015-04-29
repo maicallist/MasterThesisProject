@@ -49,6 +49,9 @@ namespace XNAServerClient
 
         /* speed change */
         int accelCounter;
+
+        /* test prediction */
+        double show = 0;
         #endregion
 
         #region XNA functions
@@ -283,6 +286,15 @@ namespace XNAServerClient
             platform_com.Update(gameTime);
             platform_player.Update(gameTime);
 
+            /* show estimated start move ball y position */
+            double db = Math.Pow(ball.Position.X - platform_player.Position.X, 2)
+                + Math.Pow(ball.Position.Y - platform_player.Position.Y, 2);
+            db = Math.Sqrt(db);
+            db = predict_disToPlatform(db);
+
+            if (Math.Abs(ball.Position.Y - db) <= 10 && ball.Velocity.Y > 0)
+                show = db;
+
             /* check game end condition */
             //if part of ball image is below screen, then game end
             if (ball.Position.Y + ball.ImageHeight > ScreenManager.Instance.Dimensions.Y)
@@ -407,6 +419,9 @@ namespace XNAServerClient
         public override void Draw(SpriteBatch spriteBatch)
         {
             base.Draw(spriteBatch);
+
+            spriteBatch.DrawString(font, "Y: " + show, new Vector2(20,770),Color.Red);
+
             ball.Draw(spriteBatch);
             platform_player.Draw(spriteBatch);
             platform_com.Draw(spriteBatch);
@@ -510,6 +525,11 @@ namespace XNAServerClient
             }
         }
 
+        public double predict_disToPlatform(double dis) 
+        {
+            double y = Math.Round(1.0598579 * dis + 191.7878008, 3);
+            return y;
+        }
         #endregion
     }
 }

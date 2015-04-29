@@ -28,6 +28,7 @@ namespace XNAServerClient
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             Components.Add(new GamerServicesComponent(this));
+            graphics.SynchronizeWithVerticalRetrace = false;
         }
 
         /// <summary>

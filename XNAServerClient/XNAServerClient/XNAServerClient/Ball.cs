@@ -62,6 +62,11 @@ namespace XNAServerClient
             get { return ballImage.Height; }
         }
 
+        public float Alpha
+        {
+            set { alpha = value; }
+        }
+
         public override void LoadContent(ContentManager Content, InputManager inputManager)
         {
             base.LoadContent(Content, inputManager);
