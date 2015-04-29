@@ -52,6 +52,7 @@ namespace XNAServerClient
 
         /* test prediction */
         double show = 0;
+        double movey = 0;
         #endregion
 
         #region XNA functions
@@ -290,11 +291,14 @@ namespace XNAServerClient
             double db = Math.Pow(ball.Position.X - platform_player.Position.X, 2)
                 + Math.Pow(ball.Position.Y - platform_player.Position.Y, 2);
             db = Math.Sqrt(db);
+            /* O colume in excel*/
+            db = db / Math.Abs(ball.Velocity.X);
             db = predict_disToPlatform(db);
 
-            if (Math.Abs(ball.Position.Y - db) <= 10 && ball.Velocity.Y > 0)
+            if (Math.Abs(ball.Position.Y - db) <= 2 && ball.Velocity.Y > 0)
+            {
                 show = db;
-
+            }
             /* check game end condition */
             //if part of ball image is below screen, then game end
             if (ball.Position.Y + ball.ImageHeight > ScreenManager.Instance.Dimensions.Y)
@@ -411,6 +415,9 @@ namespace XNAServerClient
                         +"\tBallVel\t" + ball.Velocity.X + "," + ball.Velocity.Y
                         +"\tPlaXCoor\t" + platform_player.Position.X
                         +"\tPlatVel\t" + platform_player.Velocity.X + "," + platform_player.Velocity.Y);
+                    //store Y position to display on screen later
+                    if (ball.Velocity.Y > 0)
+                        movey = ball.Position.Y;
                 }
             }
 
@@ -420,7 +427,7 @@ namespace XNAServerClient
         {
             base.Draw(spriteBatch);
 
-            spriteBatch.DrawString(font, "Y: " + show, new Vector2(20,770),Color.Red);
+            spriteBatch.DrawString(font, "Y: " + show + "                       Platform Move: " + movey, new Vector2(20,770),Color.Red);
 
             ball.Draw(spriteBatch);
             platform_player.Draw(spriteBatch);
@@ -527,7 +534,9 @@ namespace XNAServerClient
 
         public double predict_disToPlatform(double dis) 
         {
-            double y = Math.Round(1.0598579 * dis + 191.7878008, 3);
+            //double y = Math.Round(-0.9623147 * dis + 777.938163, 3);
+            //double y = Math.Round(1.0598579 * dis + 191.7878008, 3);
+            double y = Math.Round(-4.6633431 * dis + 628.6351556, 3);
             return y;
         }
         #endregion
