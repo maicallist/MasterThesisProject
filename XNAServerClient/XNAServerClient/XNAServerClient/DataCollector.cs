@@ -53,7 +53,7 @@ namespace XNAServerClient
         /* test prediction */
         double show = 0;
         double movey = 0;
-
+        //record prediction and real position
         bool hasPeredition;
         ArrayList predictList;
         #endregion
@@ -160,6 +160,7 @@ namespace XNAServerClient
                 if (UpdateCollision(ballRect, ballColor, platformRect_player, platformColor_player))
                 {
                     accelCounter++;
+                    predictList.Add("#########");
                     ////if platform is moving while collade, add extra speed to ball
                     //if (platform_player.Velocity.X > 0)
                     //{
@@ -309,12 +310,12 @@ namespace XNAServerClient
             //double db = Math.Pow(ball.Position.X - updatetimes, 2) + Math.Pow(ball.Position.Y - 700, 2);
             //db = Math.Sqrt(db);
 
-            db = predict_disToPlatform(db);
+            db = predict_disToPlatform(db, (int)ball.Velocity.X, (int)ball.Position.X);
 
-            if (db > 200 && db < 700 && Math.Abs(ball.Position.Y - db) <= 10 && ball.Velocity.Y > 0)
+            if (db > 200 && db < 700 && Math.Abs(ball.Position.Y - db) <= 3 && ball.Velocity.Y > 0)
             {
                 show = db;
-                predictList.Add("Prediction " + show);
+                predictList.Add("Prediction\t" + show);
                 hasPeredition = true;
             }
             /* check game end condition */
@@ -451,9 +452,12 @@ namespace XNAServerClient
                     if (ball.Velocity.Y > 0)
                         movey = ball.Position.Y;
                     //store platform move in to predictList
-                    if (!hasPeredition)
-                        predictList.Add("Prediction unknow");
-                    predictList.Add("Real " + ball.Position.Y);
+                    if (ball.Velocity.Y > 0)
+                    {
+                        if (!hasPeredition) 
+                            predictList.Add("Prediction\tunknow");
+                        predictList.Add("Real\t" + ball.Position.Y);
+                    }
                 }
             }
 
@@ -595,6 +599,17 @@ namespace XNAServerClient
 
             //estimate collsion to ball
             //double y = Math.Round(-0.592514158 * dis + 688.23222, 3);
+            return y;
+        }
+
+        public double predict_disToPlatform(double dis, int vel, int posx)
+        {
+            double y;
+            //y = Math.Round(719.4816242 + -0.96626895 * dis + 2.3948241 * vel + 0.109757 * posx, 3);
+            double veld = Math.Pow(vel, 2) + 100;
+            veld = Math.Sqrt(veld);
+            y = Math.Round(719.4816242 + -0.9662437 * dis + 3.03975786 * veld + 0.1079523 * posx, 3);
+
             return y;
         }
         #endregion
