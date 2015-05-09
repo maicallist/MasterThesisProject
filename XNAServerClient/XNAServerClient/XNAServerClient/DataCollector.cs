@@ -53,6 +53,9 @@ namespace XNAServerClient
         /* test prediction */
         double show = 0;
         double movey = 0;
+
+        bool hasPeredition;
+        ArrayList predictList;
         #endregion
 
         #region XNA functions
@@ -92,6 +95,9 @@ namespace XNAServerClient
             data = new ArrayList();
 
             accelCounter = 0;
+
+            hasPeredition = false;
+            predictList = new ArrayList();
         }
 
         public override void UnloadContent()
@@ -233,6 +239,9 @@ namespace XNAServerClient
                 //check pixel collision
                 if (UpdateCollision(ballRect, ballColor, platformRect_com, platformColor_com))
                 {
+                    //restore prediction
+                    hasPeredition = false;
+
                     //if ball center is higher than platform, ball's velocity Y is negative 
                     //if ball center is lower than platform, ball's velocity Y is positive
                     Vector2 ballOrigin = new Vector2(ball.Origin.X + ballRect.X, ball.Origin.Y + ballRect.Y);
@@ -291,13 +300,22 @@ namespace XNAServerClient
             double db = Math.Pow(ball.Position.X - platform_player.Position.X, 2)
                 + Math.Pow(ball.Position.Y - platform_player.Position.Y, 2);
             db = Math.Sqrt(db);
+
             /* O colume in excel*/
-            db = db / Math.Abs(ball.Velocity.X);
+            //db = db / Math.Abs(ball.Velocity.X);
+            /* new start excel T col */
+            //double updatetimes = (700 - ball.Position.Y) / 10;
+            //updatetimes = updatetimes * ball.Velocity.X + ball.Position.X;
+            //double db = Math.Pow(ball.Position.X - updatetimes, 2) + Math.Pow(ball.Position.Y - 700, 2);
+            //db = Math.Sqrt(db);
+
             db = predict_disToPlatform(db);
 
-            if (Math.Abs(ball.Position.Y - db) <= 2 && ball.Velocity.Y > 0)
+            if (db > 200 && db < 700 && Math.Abs(ball.Position.Y - db) <= 10 && ball.Velocity.Y > 0)
             {
                 show = db;
+                predictList.Add("Prediction " + show);
+                hasPeredition = true;
             }
             /* check game end condition */
             //if part of ball image is below screen, then game end
@@ -335,10 +353,12 @@ namespace XNAServerClient
                     //output path - file name
                     //see bin/x86/debug/
                     string path = @".\Data.txt";
-
+                    string predictionPath = @"./Prediction.txt";
                     //check file existance
                     if (!File.Exists(path))
                         File.Create(path).Dispose();
+                    if (!File.Exists(predictionPath))
+                        File.Create(predictionPath).Dispose();
                     //file exist
                     if (File.Exists(path))
                     {
@@ -353,9 +373,21 @@ namespace XNAServerClient
                             }
                         }
                     }
+                    //write prediction to file
+                    if (File.Exists(predictionPath))
+                    {
+                        //append data  
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(predictionPath, true))
+                        {
+                            string str;
+                            for (int i = 0; i < predictList.Count; i++)
+                            {
+                                str = "" + predictList[i];
+                                file.WriteLine(str);
+                            }
+                        }
+                    }
                 }
-
-                
             }
 
             //collecting platform status
@@ -418,6 +450,10 @@ namespace XNAServerClient
                     //store Y position to display on screen later
                     if (ball.Velocity.Y > 0)
                         movey = ball.Position.Y;
+                    //store platform move in to predictList
+                    if (!hasPeredition)
+                        predictList.Add("Prediction unknow");
+                    predictList.Add("Real " + ball.Position.Y);
                 }
             }
 
@@ -534,9 +570,31 @@ namespace XNAServerClient
 
         public double predict_disToPlatform(double dis) 
         {
-            //double y = Math.Round(-0.9623147 * dis + 777.938163, 3);
+            //distance ball to platform vs ball y postion
+            double y = Math.Round(-0.962314673 * dis + 777.9533063, 3);
+            
+            //double y = -2 * Math.Pow(10, -12) * Math.Pow(dis, 6)
+            //    + 4 * Math.Pow(10, -9) * Math.Pow(dis, 5)
+            //    - 3 * Math.Pow(10, -6) * Math.Pow(dis, 4)
+            //    - 0.2056 * Math.Pow(dis, 2)
+            //    + 16.982 * dis
+            //    + 184.1;
+
+            //double y = -6 * Math.Pow(10, -7) * Math.Pow(dis, 3)
+            //    - 0.0002 * Math.Pow(dis, 2)
+            //    + 0.6879 * dis + 737.61;
+
+            //double y = Math.Round(0.0007 * Math.Pow(dis, 2)
+            //    - 0.5541 * dis + 727.99, 3);
+
+            // y^2
             //double y = Math.Round(1.0598579 * dis + 191.7878008, 3);
-            double y = Math.Round(-4.6633431 * dis + 628.6351556, 3);
+
+            // ball to platform / ball vel x
+            //double y = Math.Round(-4.6633431 * dis + 628.6351556, 3);
+
+            //estimate collsion to ball
+            //double y = Math.Round(-0.592514158 * dis + 688.23222, 3);
             return y;
         }
         #endregion
