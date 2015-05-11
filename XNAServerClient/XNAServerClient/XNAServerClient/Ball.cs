@@ -62,6 +62,11 @@ namespace XNAServerClient
             get { return ballImage.Height; }
         }
 
+        public int ImageWidth
+        {
+            get { return ballImage.Width; }
+        }
+
         public float Alpha
         {
             set { alpha = value; }

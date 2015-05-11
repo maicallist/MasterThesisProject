@@ -1,114 +1,26 @@
 #########
-Prediction	unknow
-Real	320
-Prediction	511.439
-Prediction	518.031
-Prediction	557.103
-Prediction	567.351
-Prediction	577.596
-Prediction	587.84
-Prediction	598.08
-Prediction	608.318
-Prediction	618.552
-Prediction	628.78
-Prediction	639.003
-Prediction	649.217
-Prediction	659.421
-Prediction	669.61
-Prediction	679.778
-Prediction	689.915
+prediction	0	real	0
 #########
-Prediction	unknow
-Real	130
+prediction	0	real	290
 #########
-Prediction	unknow
-Real	210
+prediction	0	real	50
 #########
-Prediction	207.683
-Real	210
-Prediction	447.593
-Prediction	460.027
-Prediction	472.452
+prediction	282.844	real	200
 #########
-Prediction	280.787
-Prediction	287.17
-Prediction	469.126
-Prediction	481.335
+prediction	400.03	real	260
 #########
-Prediction	251.758
-Prediction	257.246
-Prediction	337.877
-Prediction	350.874
-Prediction	360.623
-Real	360
-Prediction	370.329
-Prediction	379.989
-Prediction	389.599
-Prediction	399.155
-Prediction	408.656
-Prediction	418.095
-Prediction	427.469
-Prediction	540.752
+prediction	0	real	370
 #########
-Prediction	unknow
-Real	260
+prediction	399.03	real	190
 #########
-Prediction	unknow
-Real	320
-Prediction	589.928
+prediction	0	real	180
 #########
-Prediction	247.171
-Real	280
+prediction	578.844	real	150
 #########
-Prediction	337.342
-Real	390
-Prediction	609.43
+prediction	229.156	real	280
 #########
-Prediction	438.497
-Real	570
-Prediction	627.433
-Prediction	640.608
+prediction	0	real	440
 #########
-Prediction	unknow
-Real	350
-Prediction	421.657
-Prediction	539.393
+prediction	0	real	200
 #########
-Prediction	unknow
-Real	390
-Prediction	677.618
-Prediction	692.02
-#########
-Prediction	287.077
-Real	330
-Prediction	398.248
-Prediction	409.588
-Prediction	420.919
-Prediction	432.242
-#########
-Prediction	412.305
-Real	410
-#########
-Prediction	unknow
-Real	460
-Prediction	602.077
-#########
-Prediction	unknow
-Real	300
-Prediction	322.672
-Prediction	331.768
-Prediction	340.861
-Prediction	349.949
-Prediction	359.033
-Prediction	368.112
-Prediction	377.186
-Prediction	547.941
-Prediction	562.516
-#########
-Prediction	279.995
-Prediction	311.351
-#########
-#########
-Prediction	498.374
-Prediction	571.365
-Real	570
+prediction	37.156	real	240

@@ -51,11 +51,16 @@ namespace XNAServerClient
         int accelCounter;
 
         /* test prediction */
-        double show = 0;
-        double movey = 0;
+        double show_prediction = 0;
+        /* ball Y coor when paltform moves */
+        double move_y = 0;
         //record prediction and real position
         bool hasPeredition;
         ArrayList predictList;
+        //when ball moving downwards, if hit window bounds
+        Vector2 windowEdge;
+        //only record platform once
+        bool platformHasMoved = false;
         #endregion
 
         #region XNA functions
@@ -98,6 +103,7 @@ namespace XNAServerClient
 
             hasPeredition = false;
             predictList = new ArrayList();
+            windowEdge = new Vector2(0, 0);
         }
 
         public override void UnloadContent()
@@ -160,7 +166,12 @@ namespace XNAServerClient
                 if (UpdateCollision(ballRect, ballColor, platformRect_player, platformColor_player))
                 {
                     accelCounter++;
+
+                    //when collade, collect prediction and actual data
                     predictList.Add("#########");
+                    predictList.Add("prediction\t" + show_prediction + "\treal\t" + move_y);
+                    
+                    
                     ////if platform is moving while collade, add extra speed to ball
                     //if (platform_player.Velocity.X > 0)
                     //{
@@ -240,9 +251,12 @@ namespace XNAServerClient
                 //check pixel collision
                 if (UpdateCollision(ballRect, ballColor, platformRect_com, platformColor_com))
                 {
-                    //restore prediction
+                    //restore prediction state
                     hasPeredition = false;
-
+                    show_prediction = 0;
+                    move_y = 0;
+                    windowEdge = new Vector2(0, 0);
+                    platformHasMoved = false;
                     //if ball center is higher than platform, ball's velocity Y is negative 
                     //if ball center is lower than platform, ball's velocity Y is positive
                     Vector2 ballOrigin = new Vector2(ball.Origin.X + ballRect.X, ball.Origin.Y + ballRect.Y);
@@ -292,32 +306,31 @@ namespace XNAServerClient
                     platform_com.Position = new Vector2(platform_com.Position.X + platform_com.MoveSpeed, platform_com.Position.Y);
             }
 
+            //prediction record
+            //check if ball hits window bounds
+            if (ball.Position.X <= 0
+                || ball.Position.X + ball.ImageWidth >= ScreenManager.Instance.Dimensions.X)
+            {
+                timeTag.Add(current);
+                info.Add("WindowEdge");
+                data.Add("BallPos\t" + ball.Position.X + "," + ball.Position.Y
+                    + "\tBallVel\t" + ball.Velocity.X + "," + ball.Velocity.Y
+                    + "\tPlaXCoor\t" + platform_player.Position.X
+                    + "\tPlatVel\t" + platform_player.Velocity.X + "," + platform_player.Velocity.Y);
+                if (ball.Velocity.Y > 0)
+                {
+                    windowEdge = ball.Position;
+                }
+            }
+
             base.Update(gameTime);
             ball.Update(gameTime);
             platform_com.Update(gameTime);
             platform_player.Update(gameTime);
 
-            /* show estimated start move ball y position */
-            double db = Math.Pow(ball.Position.X - platform_player.Position.X, 2)
-                + Math.Pow(ball.Position.Y - platform_player.Position.Y, 2);
-            db = Math.Sqrt(db);
-
-            /* O colume in excel*/
-            //db = db / Math.Abs(ball.Velocity.X);
-            /* new start excel T col */
-            //double updatetimes = (700 - ball.Position.Y) / 10;
-            //updatetimes = updatetimes * ball.Velocity.X + ball.Position.X;
-            //double db = Math.Pow(ball.Position.X - updatetimes, 2) + Math.Pow(ball.Position.Y - 700, 2);
-            //db = Math.Sqrt(db);
-
-            db = predict_disToPlatform(db, (int)ball.Velocity.X, (int)ball.Position.X);
-
-            if (db > 200 && db < 700 && Math.Abs(ball.Position.Y - db) <= 3 && ball.Velocity.Y > 0)
-            {
-                show = db;
-                predictList.Add("Prediction\t" + show);
-                hasPeredition = true;
-            }
+            /* show estimated start move ball y position on screen */
+            doPrediction();
+            
             /* check game end condition */
             //if part of ball image is below screen, then game end
             if (ball.Position.Y + ball.ImageHeight > ScreenManager.Instance.Dimensions.Y)
@@ -449,14 +462,11 @@ namespace XNAServerClient
                         +"\tPlaXCoor\t" + platform_player.Position.X
                         +"\tPlatVel\t" + platform_player.Velocity.X + "," + platform_player.Velocity.Y);
                     //store Y position to display on screen later
-                    if (ball.Velocity.Y > 0)
-                        movey = ball.Position.Y;
-                    //store platform move in to predictList
-                    if (ball.Velocity.Y > 0)
+                    //this is the actual Y coor when paltform moves
+                    if (ball.Velocity.Y > 0 && !platformHasMoved)
                     {
-                        if (!hasPeredition) 
-                            predictList.Add("Prediction\tunknow");
-                        predictList.Add("Real\t" + ball.Position.Y);
+                        move_y = ball.Position.Y;
+                        platformHasMoved = true;
                     }
                 }
             }
@@ -467,7 +477,8 @@ namespace XNAServerClient
         {
             base.Draw(spriteBatch);
 
-            spriteBatch.DrawString(font, "Y: " + show + "                       Platform Move: " + movey, new Vector2(20,770),Color.Red);
+            spriteBatch.DrawString(font, "prediction: " + show_prediction, new Vector2(20,770),Color.Red);
+            spriteBatch.DrawString(font, "actual: " + move_y, new Vector2(20, 750), Color.Red);
 
             ball.Draw(spriteBatch);
             platform_player.Draw(spriteBatch);
@@ -571,47 +582,144 @@ namespace XNAServerClient
                 }
             }
         }
+        
+        #endregion
+
+        #region Predictions
+
+        public void doPrediction()
+        {
+            if (ball.Velocity.Y > 0)
+            {
+                /* calc distance between ball and palt, used in prediction */
+                double db = Math.Pow(ball.Position.X - platform_player.Position.X, 2)
+                    + Math.Pow(ball.Position.Y - platform_player.Position.Y, 2);
+                db = Math.Sqrt(db);
+
+                /* O colume in excel*/
+                //db = db / Math.Abs(ball.Velocity.X);
+                /* new start excel T col */
+                //double updatetimes = (700 - ball.Position.Y) / 10;
+                //updatetimes = updatetimes * ball.Velocity.X + ball.Position.X;
+                //double db = Math.Pow(ball.Position.X - updatetimes, 2) + Math.Pow(ball.Position.Y - 700, 2);
+                //db = Math.Sqrt(db);
+
+                //take in singel independent variable
+                //db = predict_disToPlatform(db);
+
+                /*
+                 * take in 3 variables
+                 * distance between ball and platform 
+                 * ball x speed
+                 * ball x position
+                 */
+                //db = predict_disToPlatform(db, (int)ball.Velocity.X, (int)ball.Position.X);
+
+                /*
+                 * fourh param platfomr x position 
+                 */
+                db = predict_disToPlatform(db, (int)ball.Velocity.X, (int)ball.Position.X, (int)platform_player.Position.X);
+
+                /*
+                 * if ball hit window edge once when going down
+                 */
+                if (windowEdge.Y != 0)
+                    db = predict_disToPlatform(db, (int)ball.Velocity.X,
+                        (int)ball.Position.X, (int)platform_player.Position.X, (int)windowEdge.X);
+
+                if (db < 700 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPeredition)
+                {
+                    show_prediction = db;
+                    hasPeredition = true;
+                }
+            }
+        }
 
         public double predict_disToPlatform(double dis) 
         {
             //distance ball to platform vs ball y postion
-            double y = Math.Round(-0.962314673 * dis + 777.9533063, 3);
-            
-            //double y = -2 * Math.Pow(10, -12) * Math.Pow(dis, 6)
-            //    + 4 * Math.Pow(10, -9) * Math.Pow(dis, 5)
-            //    - 3 * Math.Pow(10, -6) * Math.Pow(dis, 4)
-            //    - 0.2056 * Math.Pow(dis, 2)
-            //    + 16.982 * dis
-            //    + 184.1;
 
-            //double y = -6 * Math.Pow(10, -7) * Math.Pow(dis, 3)
-            //    - 0.0002 * Math.Pow(dis, 2)
-            //    + 0.6879 * dis + 737.61;
-
-            //double y = Math.Round(0.0007 * Math.Pow(dis, 2)
-            //    - 0.5541 * dis + 727.99, 3);
-
-            // y^2
-            //double y = Math.Round(1.0598579 * dis + 191.7878008, 3);
-
-            // ball to platform / ball vel x
-            //double y = Math.Round(-4.6633431 * dis + 628.6351556, 3);
-
-            //estimate collsion to ball
-            //double y = Math.Round(-0.592514158 * dis + 688.23222, 3);
+            /* 
+             * R Square     0.940077006273422
+             * std err      29.1367380609093
+             */
+            double y = Math.Round(-0.989707185 * dis + 783.8653914, 3);
             return y;
         }
 
-        public double predict_disToPlatform(double dis, int vel, int posx)
+        /* 
+         * double   distance between ball and platform
+         * int      ball x volecity
+         */
+        public double predict_disToPlatform(double dis, int vel)
         {
+            /* 
+             * Adjusted R Square    0.943112200851591
+             * std err              28.3030798445966
+             */
             double y;
-            //y = Math.Round(719.4816242 + -0.96626895 * dis + 2.3948241 * vel + 0.109757 * posx, 3);
+            //if concidering y velocity
+            // y velocity is fixed, 10 per updates
+            // thus y^2 = 100 
             double veld = Math.Pow(vel, 2) + 100;
             veld = Math.Sqrt(veld);
-            y = Math.Round(719.4816242 + -0.9662437 * dis + 3.03975786 * veld + 0.1079523 * posx, 3);
+            y = Math.Round(728.9963297 + -0.9613464 * dis + 2.6610659 * veld, 3);
 
             return y;
         }
+        
+
+        /*
+         * int posx     ball x position
+         * int platx    platform x position
+         */ 
+        public double predict_disToPlatform(double dis, int vel, int posx, int platx)
+        {
+            /* 
+             * Adjusted R Square    0.94762887427949
+             * std err              27.156267937301
+             */
+            double y;
+            double veld = Math.Pow(vel, 2) + 100;
+            veld = Math.Sqrt(veld);
+            y = Math.Round(706.3240273 + -0.965004 * dis + 2.2408532 * veld
+                + 0.0410435 * posx + 0.1021678 * platx);
+
+            //std err compensation
+            //302 is the average value for all data
+            if (y > 302)
+                y -= 27.156;
+            else if (y < 302)
+                y += 27.156;
+
+            return y;
+        }
+
+        /*
+         * ball y position when ball hit left or right window bounds (ball.velocity.y > 0 only)
+         */
+        public double predict_disToPlatform(double dis, int vel, int posx, int platx, int edge)
+        {
+            /* 
+             * Adjusted R Square    0.948060344493643
+             * std err              25.9697490413051
+             */
+            double y;
+            y = Math.Round(706.5644181 + -0.9503573 * dis
+                + 0.0497304 * posx + 0.1652617 * platx
+                + 0.0655089 * windowEdge.X);
+            Console.Write("y is " + y + "    ");
+            //std err compensation
+            //335 is the average value for edge data
+            if (y > 335)
+                y -= 25.97;
+            else if (y < 335)
+                y += 25.97;
+            Console.WriteLine("Adjust y is " + y);
+            Console.WriteLine("##################################");
+            return y;
+        }
+
         #endregion
     }
 }
