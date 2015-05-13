@@ -168,7 +168,7 @@ namespace XNAServerClient
                     accelCounter++;
 
                     //when collade, collect prediction and actual data
-                    predictList.Add("#########");
+                    //predictList.Add("#########");
                     predictList.Add("prediction\t" + show_prediction + "\treal\t" + move_y);
                     
                     
@@ -608,12 +608,11 @@ namespace XNAServerClient
                 //db = predict_disToPlatform(db);
 
                 /*
-                 * take in 3 variables
+                 * take in 2 variables
                  * distance between ball and platform 
                  * ball x speed
-                 * ball x position
                  */
-                //db = predict_disToPlatform(db, (int)ball.Velocity.X, (int)ball.Position.X);
+                //db = predict_disToPlatform(db, (int)ball.Velocity.X);
 
                 /*
                  * fourh param platfomr x position 
@@ -627,7 +626,8 @@ namespace XNAServerClient
                     db = predict_disToPlatform(db, (int)ball.Velocity.X,
                         (int)ball.Position.X, (int)platform_player.Position.X, (int)windowEdge.X);
 
-                if (db < 700 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPeredition)
+
+                if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPeredition)
                 {
                     show_prediction = db;
                     hasPeredition = true;
@@ -644,6 +644,7 @@ namespace XNAServerClient
              * std err      29.1367380609093
              */
             double y = Math.Round(-0.989707185 * dis + 783.8653914, 3);
+            //y = Math.Round(342.6286646 + -1.1617267 * y);
             return y;
         }
 
@@ -664,6 +665,11 @@ namespace XNAServerClient
             double veld = Math.Pow(vel, 2) + 100;
             veld = Math.Sqrt(veld);
             y = Math.Round(728.9963297 + -0.9613464 * dis + 2.6610659 * veld, 3);
+
+            //if (y > 302)
+            //    y -= 28.303;
+            //else if (y < 302)
+            //    y += 28.303;
 
             return y;
         }
@@ -687,11 +693,14 @@ namespace XNAServerClient
 
             //std err compensation
             //302 is the average value for all data
-            if (y > 302)
-                y -= 27.156;
-            else if (y < 302)
-                y += 27.156;
+            double degree = Math.Abs(y - 302) / 250;
 
+            if (y > 302)
+                y -= 27.156 * degree;
+            else if (y < 302)
+                y += 27.156 * degree;
+
+            y = Math.Round(y, 3);
             return y;
         }
 
@@ -708,15 +717,17 @@ namespace XNAServerClient
             y = Math.Round(706.5644181 + -0.9503573 * dis
                 + 0.0497304 * posx + 0.1652617 * platx
                 + 0.0655089 * windowEdge.X);
-            Console.Write("y is " + y + "    ");
+
             //std err compensation
             //335 is the average value for edge data
+            double degree = Math.Abs(y - 335) / 250;
+            
             if (y > 335)
-                y -= 25.97;
+                y -= 25.97 * degree;
             else if (y < 335)
-                y += 25.97;
-            Console.WriteLine("Adjust y is " + y);
-            Console.WriteLine("##################################");
+                y += 25.97 * degree;
+
+            y = Math.Round(y, 3);
             return y;
         }
 
