@@ -478,7 +478,7 @@ namespace XNAServerClient
             base.Draw(spriteBatch);
 
             spriteBatch.DrawString(font, "prediction: " + show_prediction, new Vector2(20,770),Color.Red);
-            spriteBatch.DrawString(font, "actual: " + move_y, new Vector2(20, 750), Color.Red);
+            spriteBatch.DrawString(font, "real: " + move_y, new Vector2(20, 750), Color.Red);
 
             ball.Draw(spriteBatch);
             platform_player.Draw(spriteBatch);
@@ -644,7 +644,7 @@ namespace XNAServerClient
              * std err      29.1367380609093
              */
             double y = Math.Round(-0.989707185 * dis + 783.8653914, 3);
-            //y = Math.Round(342.6286646 + -1.1617267 * y);
+
             return y;
         }
 
@@ -665,12 +665,6 @@ namespace XNAServerClient
             double veld = Math.Pow(vel, 2) + 100;
             veld = Math.Sqrt(veld);
             y = Math.Round(728.9963297 + -0.9613464 * dis + 2.6610659 * veld, 3);
-
-            //if (y > 302)
-            //    y -= 28.303;
-            //else if (y < 302)
-            //    y += 28.303;
-
             return y;
         }
         
@@ -693,14 +687,14 @@ namespace XNAServerClient
 
             //std err compensation
             //302 is the average value for all data
-            double degree = Math.Abs(y - 302) / 250;
+            //double degree = Math.Abs(y - 302) / 250;
 
-            if (y > 302)
-                y -= 27.156 * degree;
-            else if (y < 302)
-                y += 27.156 * degree;
+            //if (y > 302)
+            //    y -= 27.156 * degree;
+            //else if (y < 302)
+            //    y += 27.156 * degree;
 
-            y = Math.Round(y, 3);
+            //y = Math.Round(y, 3);
             return y;
         }
 
@@ -720,14 +714,14 @@ namespace XNAServerClient
 
             //std err compensation
             //335 is the average value for edge data
-            double degree = Math.Abs(y - 335) / 250;
+            //double degree = Math.Abs(y - 335) / 250;
             
-            if (y > 335)
-                y -= 25.97 * degree;
-            else if (y < 335)
-                y += 25.97 * degree;
+            //if (y > 335)
+            //    y -= 25.97 * degree;
+            //else if (y < 335)
+            //    y += 25.97 * degree;
 
-            y = Math.Round(y, 3);
+            //y = Math.Round(y, 3);
             return y;
         }
 

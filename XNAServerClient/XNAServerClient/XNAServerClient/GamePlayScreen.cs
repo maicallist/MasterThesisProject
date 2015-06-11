@@ -300,9 +300,9 @@ namespace XNAServerClient
             ball.Update(gameTime);
             platform_local.Update(gameTime);
             //update remote platform
-            if (remotePlatformVel != null)
-                platform_remote.Position += (remotePlatformVel * new Vector2(-1, -1));
-            Console.WriteLine(remotePlatformVel.X);
+            if (lagCompen == LagCompensation.DeadReckoning)
+                DeadReckoning();
+            //Console.WriteLine(remotePlatformVel.X);
             platform_remote.Update(gameTime);
             
 
@@ -889,6 +889,8 @@ namespace XNAServerClient
             //remote platform moves based on last updated remotePlatformVel
 
             //Console.WriteLine("Dead Reckoning : " + platform_remote.Position.X + " with " + remotePlatformVel.X);
+            if (remotePlatformVel != null)
+                platform_remote.Position += (remotePlatformVel * new Vector2(-1, -1));
         }
 
         public void DeadReckoningProcess()
