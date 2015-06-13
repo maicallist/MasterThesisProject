@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -192,6 +193,54 @@ namespace XNAServerClient
                         platform_local.Velocity = new Vector2(10, 0);
                     sendPacket = true;
                 }
+            }
+
+            //press p to store dead reckoning data
+            if (inputManager.KeyPressed(Keys.P))
+            {
+                //serilize data
+                //output path - file name
+                //see bin/x86/debug/
+                string path;
+                if (isServer)
+                     path = @".\Remote.txt";
+                else
+                    path = @".\Local.txt";
+                
+                //check file existance
+                if (!File.Exists(path))
+                    File.Create(path).Dispose();
+
+                //file exist
+                if (File.Exists(path))
+                {
+                    //append data  
+                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(path, true))
+                    {
+                        string str;
+                        if (isServer)
+                        {
+                            for (int i = 0; i < hostSide.Count; i++)
+                            {
+                                str = hostSide[i] + "";
+                                file.WriteLine(str);
+                            }
+                        }
+                        else
+                        {
+                            for (int i = 0; i < clientSide.Count; i++)
+                            {
+                                str = clientSide[i] + "";
+                                file.WriteLine(str);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (inputManager.KeyPressed(Keys.M))
+            { 
+            
             }
 
             /*
