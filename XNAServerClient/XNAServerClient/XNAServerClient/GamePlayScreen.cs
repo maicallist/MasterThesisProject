@@ -385,15 +385,8 @@ namespace XNAServerClient
                     if (!deadMoving)
                     {
                         deadMoving = true;
-                        //what we see is opposite to the other side
-                        //because all players see their platform at bottom
-                        //thus we need to work out what does it look like on the other side
-                        //top platform y = 20, height 25
-                        //bot platform y = 755
-                        //thus ball to top platform : ball.y - 45
-                        //invert position : 755 - ball + 45
-                        clientSide.Add(800 - ball.Position.Y);
-                        clientVel.Add(ball.Velocity.Y * -1);
+                        clientSide.Add(ball.Position.Y);
+                        clientVel.Add(ball.Velocity.Y);
                     }
                 }
                 else
@@ -862,8 +855,15 @@ namespace XNAServerClient
                             {
                                 deadMoving = true;
                                 //  #record
-                                hostSide.Add(ball.Position.Y);
-                                hostVel.Add(ball.Velocity.Y);
+                                //what we see is opposite to the other side
+                                //because all players see their platform at bottom
+                                //thus we need to work out what does it look like on the other side
+                                //top platform y = 20, height 25
+                                //bot platform y = 755
+                                //thus ball to top platform : ball.y - 45
+                                //invert position : 755 - ball + 45
+                                hostSide.Add(800 - ball.Position.Y);
+                                hostVel.Add(ball.Velocity.Y * - 1);
                             }
                             else if (deadMoving && remotePlatformVel.X == 0)
                                 deadMoving = false;
