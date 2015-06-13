@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -71,6 +72,16 @@ namespace XNAServerClient
         //lag compensation algorithm
         enum LagCompensation { None, DeadReckoning, PlayPattern }
         LagCompensation lagCompen;
+        
+
+        //record dead reckoning 
+        bool deadMoving = false;
+        //store platform moving on host
+        ArrayList hostSide;
+        ArrayList hostVel;
+        //store host platform moving on client side
+        ArrayList clientSide;
+        ArrayList clientVel;
 
         #endregion
 
@@ -115,6 +126,10 @@ namespace XNAServerClient
             lag = false;
             consisCheck = false;
             lagCompen = LagCompensation.DeadReckoning;
+
+            //record dead reckoning
+            clientSide = new ArrayList();
+            hostSide = new ArrayList();
         }
 
         public override void UnloadContent()
@@ -305,7 +320,25 @@ namespace XNAServerClient
             //Console.WriteLine(remotePlatformVel.X);
             platform_remote.Update(gameTime);
             
-
+            //record dead reckoning
+            //we check remote platform in receive packet function (host side)
+            //let's check client side local platform
+            //if platform moves, record it.
+            if (!isServer)
+            {
+                //skip the case that player presses two buttons at the same time
+                //I'm not gonna do that
+                //and this game is not for trail or anyone else
+                if (inputManager.KeyDown(Keys.Left) || inputManager.KeyDown(Keys.Right))
+                {
+                    if (!deadMoving)
+                    {
+                        deadMoving = true;
+                        clientSide.Add(ball.Position.Y);
+                        clientVel.Add(ball.Velocity.Y);
+                    }
+                }
+            }
 
             //testing lag below
             if (session != null)
@@ -751,6 +784,32 @@ namespace XNAServerClient
                         ballVel = packetReader.ReadVector2();
                         remotePlatformPos = packetReader.ReadVector2();
                         remotePlatformVel = packetReader.ReadVector2();
+                        
+                        //record dead reckoning
+                        //figure out wether platform is moving or not
+                        //on host side, we check remote platform
+                        //on local side, we check local platform (coded somewhere else)
+                        if (isServer)
+                        {
+                            //first, let's check previous state of deadMoving
+                            //then check received remotePlatformVel, wether causing a state change
+                            if (!deadMoving && remotePlatformVel.X != 0)
+                            {
+                                deadMoving = true;
+                                //  #record
+                                hostSide.Add(ball.Position.Y);
+                                hostVel.Add(ball.Velocity.Y);
+                            }
+                            else if (deadMoving && remotePlatformVel.X == 0)
+                                deadMoving = false;
+
+                            //now we have cleared when platform moves and when it stop
+                            //record ball position when platform moves
+                            //this is on host side, host has the one true state of the ball
+                            //so we don't need to process packet info
+                            //record at #record above
+                        }
+                        
                         ProcessReceivedPacket();
                     }
                     else if (hostTag == 'l')
