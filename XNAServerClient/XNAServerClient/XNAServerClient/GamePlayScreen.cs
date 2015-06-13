@@ -131,6 +131,8 @@ namespace XNAServerClient
             //record dead reckoning
             clientSide = new ArrayList();
             hostSide = new ArrayList();
+            hostVel = new ArrayList();
+            clientVel = new ArrayList();
         }
 
         public override void UnloadContent()
