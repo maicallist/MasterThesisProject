@@ -224,7 +224,7 @@ namespace XNAServerClient
                         {
                             for (int i = 0; i < hostSide.Count; i++)
                             {
-                                str = hostSide[i] + "";
+                                str = hostSide[i] + "\t" + hostVel[i];
                                 file.WriteLine(str);
                             }
                         }
@@ -232,7 +232,7 @@ namespace XNAServerClient
                         {
                             for (int i = 0; i < clientSide.Count; i++)
                             {
-                                str = clientSide[i] + "";
+                                str = clientSide[i] + "\t" + clientVel[i];
                                 file.WriteLine(str);
                             }
                         }
@@ -385,8 +385,15 @@ namespace XNAServerClient
                     if (!deadMoving)
                     {
                         deadMoving = true;
-                        clientSide.Add(ball.Position.Y);
-                        clientVel.Add(ball.Velocity.Y);
+                        //what we see is opposite to the other side
+                        //because all players see their platform at bottom
+                        //thus we need to work out what does it look like on the other side
+                        //top platform y = 20, height 25
+                        //bot platform y = 755
+                        //thus ball to top platform : ball.y - 45
+                        //invert position : 755 - ball + 45
+                        clientSide.Add(800 - ball.Position.Y);
+                        clientVel.Add(ball.Velocity.Y * -1);
                     }
                 }
                 else
