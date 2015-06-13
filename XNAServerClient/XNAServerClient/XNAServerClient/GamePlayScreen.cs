@@ -862,8 +862,8 @@ namespace XNAServerClient
                                 //bot platform y = 755
                                 //thus ball to top platform : ball.y - 45
                                 //invert position : 755 - ball + 45
-                                hostSide.Add(800 - ball.Position.Y);
-                                hostVel.Add(ball.Velocity.Y * - 1);
+                                hostSide.Add(ball.Position.Y);
+                                hostVel.Add(ball.Velocity.Y);
                             }
                             else if (deadMoving && remotePlatformVel.X == 0)
                                 deadMoving = false;
