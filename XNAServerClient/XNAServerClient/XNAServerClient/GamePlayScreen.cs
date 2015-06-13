@@ -389,6 +389,13 @@ namespace XNAServerClient
                         clientVel.Add(ball.Velocity.Y);
                     }
                 }
+                else
+                {
+                    if (inputManager.KeyUp(Keys.Left) || inputManager.KeyUp(Keys.Right))
+                    {
+                        deadMoving = false;
+                    }
+                }
             }
 
             //testing lag below
