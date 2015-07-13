@@ -55,7 +55,7 @@ namespace XNAServerClient
         /* ball Y coor when paltform moves */
         double move_y = 0;
         //record prediction and real position
-        bool hasPeredition;
+        bool hasPrediction;
         ArrayList predictList;
         //when ball moving downwards, if hit window bounds
         Vector2 windowEdge;
@@ -101,7 +101,7 @@ namespace XNAServerClient
 
             accelCounter = 0;
 
-            hasPeredition = false;
+            hasPrediction = false;
             predictList = new ArrayList();
             windowEdge = new Vector2(0, 0);
         }
@@ -252,7 +252,7 @@ namespace XNAServerClient
                 if (UpdateCollision(ballRect, ballColor, platformRect_com, platformColor_com))
                 {
                     //restore prediction state
-                    hasPeredition = false;
+                    hasPrediction = false;
                     show_prediction = 0;
                     move_y = 0;
                     windowEdge = new Vector2(0, 0);
@@ -278,16 +278,16 @@ namespace XNAServerClient
                     }
 
                     //if platform is moving while collade, add extra speed to ball
-                    if (platform_com.Velocity.X > 0)
-                    {
-                        if (ball.Velocity.X > 0 || ball.Velocity.X < -5)
-                            ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
-                    }
-                    else if (platform_com.Velocity.X < 0)
-                    {
-                        if (ball.Velocity.X > 5 || ball.Velocity.X < 0)
-                            ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
-                    }
+                    //if (platform_com.Velocity.X > 0)
+                    //{
+                    //    if (ball.Velocity.X > 0 || ball.Velocity.X < -5)
+                    //        ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
+                    //}
+                    //else if (platform_com.Velocity.X < 0)
+                    //{
+                    //    if (ball.Velocity.X > 5 || ball.Velocity.X < 0)
+                    //        ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
+                    //}
                 }
             }
 
@@ -356,7 +356,7 @@ namespace XNAServerClient
                 start = false;
                 end = true;
                 
-                //forze game state
+                //freeze game state
                 ball.Velocity = new Vector2(0, 0);
                 platform_player.ControlByPlayer = false;
 
@@ -387,20 +387,22 @@ namespace XNAServerClient
                             }
                         }
                     }
+
                     //write prediction to file
-                    if (File.Exists(predictionPath))
-                    {
-                        //append data  
-                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(predictionPath, true))
-                        {
-                            string str;
-                            for (int i = 0; i < predictList.Count; i++)
-                            {
-                                str = "" + predictList[i];
-                                file.WriteLine(str);
-                            }
-                        }
-                    }
+                    //if (File.Exists(predictionPath))
+                    //{
+                    //    //append data  
+                    //    using (System.IO.StreamWriter file = new System.IO.StreamWriter(predictionPath, true))
+                    //    {
+                    //        string str;
+                    //        for (int i = 0; i < predictList.Count; i++)
+                    //        {
+                    //            str = "" + predictList[i];
+                    //            file.WriteLine(str);
+                    //        }
+                    //    }
+                    //}
+
                 }
             }
 
@@ -424,7 +426,7 @@ namespace XNAServerClient
                     platform_player.Velocity = new Vector2(0, 0);
                     
                     //collect some data, when platform stop
-                    //where the ball is, where ball is moving to
+                    //where the ball is, where the ball is moving to
                     //where platform stoped (platform current position)
                     //current = gameTime.TotalGameTime - startTime; ;
                     timeTag.Add(current);
@@ -436,6 +438,8 @@ namespace XNAServerClient
                 }
             }
             else
+            //we excludes the case that both keys are pressed at the same time
+            //I'm the testee anyway
             {
                 //platform wasn't moving in last update()
                 //now it starts moving
@@ -556,6 +560,8 @@ namespace XNAServerClient
                      * note 
                      * casuing imperfect 
                      * waiting to be further investigated 
+                     * 
+                     * ## has a temporal fix
                      */
                 { 
                     //esti pos - (distance to hit right window)
@@ -564,11 +570,11 @@ namespace XNAServerClient
                     //estPosition.X = windowWidth - ball.Origin.X - (estPosition.X - (windowWidth - ball.Origin.X - ball.Position.X));
 
                     /*  
-+                     * explain of subtract 100 in fomular below
-+                     * I currently have no idea why the estimated position is worng
-+                     * but it appears everytime the ball hits right window border
-+                     * my estimation position shifts to right by 100 from real position
-+                     */
+                     * explain of subtract 100 in fomular below
+                     * I currently have no idea why the estimated position is worng
+                     * but it appears everytime the ball hits right window border
+                     * my estimation position shifts to right by 100 from real position
+                     */
 
                     estPosition.X = windowWidth + windowWidth - estPosition.X - 100;
                     //estPosition.X = windowWidth - ball.Origin.X - estPosition.X + windowWidth - ball.Origin.X - ball.Position.X;
@@ -627,10 +633,10 @@ namespace XNAServerClient
                         (int)ball.Position.X, (int)platform_player.Position.X, (int)windowEdge.X);
 
 
-                if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPeredition)
+                if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPrediction)
                 {
                     show_prediction = db;
-                    hasPeredition = true;
+                    hasPrediction = true;
                 }
             }
         }
@@ -685,16 +691,6 @@ namespace XNAServerClient
             y = Math.Round(706.3240273 + -0.965004 * dis + 2.2408532 * veld
                 + 0.0410435 * posx + 0.1021678 * platx);
 
-            //std err compensation
-            //302 is the average value for all data
-            //double degree = Math.Abs(y - 302) / 250;
-
-            //if (y > 302)
-            //    y -= 27.156 * degree;
-            //else if (y < 302)
-            //    y += 27.156 * degree;
-
-            //y = Math.Round(y, 3);
             return y;
         }
 
@@ -712,16 +708,6 @@ namespace XNAServerClient
                 + 0.0497304 * posx + 0.1652617 * platx
                 + 0.0655089 * windowEdge.X);
 
-            //std err compensation
-            //335 is the average value for edge data
-            //double degree = Math.Abs(y - 335) / 250;
-            
-            //if (y > 335)
-            //    y -= 25.97 * degree;
-            //else if (y < 335)
-            //    y += 25.97 * degree;
-
-            //y = Math.Round(y, 3);
             return y;
         }
 

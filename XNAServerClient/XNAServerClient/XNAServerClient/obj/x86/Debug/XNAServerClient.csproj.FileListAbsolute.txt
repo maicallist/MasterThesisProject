@@ -65,7 +65,7 @@ D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug
 D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Splash\image3.png
 D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\XNAServerClient.exe
 D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\XNAServerClient.pdb
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\XNAServerClient.csprojResolveAssemblyReference.cache
 D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\Microsoft.Xna.Framework.RuntimeProfile.txt
 D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\XNAServerClient.exe
 D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\XNAServerClient.pdb
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\XNAServerClient.csprojResolveAssemblyReference.cache
