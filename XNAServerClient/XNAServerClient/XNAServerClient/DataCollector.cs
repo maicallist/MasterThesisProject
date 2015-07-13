@@ -51,12 +51,22 @@ namespace XNAServerClient
         int accelCounter;
 
         /* test prediction */
-        double show_prediction = 0;
+        double show_prediction_1st = 0;
+        double show_prediction_2nd = 0;
+        double show_prediction_3rd = 0;
+        double show_prediction_4th = 0;
         /* ball Y coor when paltform moves */
         double move_y = 0;
         //record prediction and real position
-        bool hasPrediction;
-        ArrayList predictList;
+        bool hasPrediction_1;
+        bool hasPrediction_2;
+        bool hasPrediction_3;
+        bool hasPrediction_4;
+
+        ArrayList predictList_1st;
+        ArrayList predictList_2nd;
+        ArrayList predictList_3rd;
+        ArrayList predictList_4th;
         //when ball moving downwards, if hit window bounds
         Vector2 windowEdge;
         //only record platform once
@@ -101,8 +111,14 @@ namespace XNAServerClient
 
             accelCounter = 0;
 
-            hasPrediction = false;
-            predictList = new ArrayList();
+            hasPrediction_1 = false;
+            hasPrediction_2 = false;
+            hasPrediction_3 = false;
+            hasPrediction_4 = false;
+            predictList_1st = new ArrayList();
+            predictList_2nd = new ArrayList();
+            predictList_3rd = new ArrayList();
+            predictList_4th = new ArrayList();
             windowEdge = new Vector2(0, 0);
         }
 
@@ -169,8 +185,10 @@ namespace XNAServerClient
 
                     //when collade, collect prediction and actual data
                     //predictList.Add("#########");
-                    predictList.Add("prediction\t" + show_prediction + "\treal\t" + move_y);
-                    
+                    predictList_1st.Add("prediction\t" + show_prediction_1st + "\treal\t" + move_y);
+                    predictList_2nd.Add("prediction\t" + show_prediction_2nd + "\treal\t" + move_y);
+                    predictList_3rd.Add("prediction\t" + show_prediction_3rd + "\treal\t" + move_y);
+                    predictList_4th.Add("prediction\t" + show_prediction_4th + "\treal\t" + move_y);
                     
                     ////if platform is moving while collade, add extra speed to ball
                     //if (platform_player.Velocity.X > 0)
@@ -252,8 +270,14 @@ namespace XNAServerClient
                 if (UpdateCollision(ballRect, ballColor, platformRect_com, platformColor_com))
                 {
                     //restore prediction state
-                    hasPrediction = false;
-                    show_prediction = 0;
+                    hasPrediction_1 = false;
+                    hasPrediction_2 = false;
+                    hasPrediction_3 = false;
+                    hasPrediction_4 = false;
+                    show_prediction_1st = 0;
+                    show_prediction_2nd = 0;
+                    show_prediction_3rd = 0;
+                    show_prediction_4th = 0;
                     move_y = 0;
                     windowEdge = new Vector2(0, 0);
                     platformHasMoved = false;
@@ -367,12 +391,20 @@ namespace XNAServerClient
                     //output path - file name
                     //see bin/x86/debug/
                     string path = @".\Data.txt";
-                    string predictionPath = @"./Prediction.txt";
+                    string predictionPath_1 = @"./Prediction_1st.txt";
+                    string predictionPath_2 = @"./Prediction_2nd.txt";
+                    string predictionPath_3 = @"./Prediction_3rd.txt";
+                    string predictionPath_4 = @"./Prediction_4th.txt";
                     //check file existance
                     if (!File.Exists(path))
                         File.Create(path).Dispose();
-                    if (!File.Exists(predictionPath))
-                        File.Create(predictionPath).Dispose();
+                    if (!File.Exists(predictionPath_1))
+                    {
+                        File.Create(predictionPath_1).Dispose();
+                        File.Create(predictionPath_2).Dispose();
+                        File.Create(predictionPath_3).Dispose();
+                        File.Create(predictionPath_4).Dispose();
+                    }
                     //file exist
                     if (File.Exists(path))
                     {
@@ -388,20 +420,63 @@ namespace XNAServerClient
                         }
                     }
 
-                    //write prediction to file
-                    //if (File.Exists(predictionPath))
-                    //{
-                    //    //append data  
-                    //    using (System.IO.StreamWriter file = new System.IO.StreamWriter(predictionPath, true))
-                    //    {
-                    //        string str;
-                    //        for (int i = 0; i < predictList.Count; i++)
-                    //        {
-                    //            str = "" + predictList[i];
-                    //            file.WriteLine(str);
-                    //        }
-                    //    }
-                    //}
+                    //write predictions to file
+                    //1st
+                    if (File.Exists(predictionPath_1))
+                    {
+                        //append data  
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(predictionPath_1, true))
+                        {
+                            string str;
+                            for (int i = 0; i < predictList_1st.Count; i++)
+                            {
+                                str = "" + predictList_1st[i];
+                                file.WriteLine(str);
+                            }
+                        }
+                    }
+                    //2nd
+                    if (File.Exists(predictionPath_2))
+                    {
+                        //append data  
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(predictionPath_2, true))
+                        {
+                            string str;
+                            for (int i = 0; i < predictList_2nd.Count; i++)
+                            {
+                                str = "" + predictList_2nd[i];
+                                file.WriteLine(str);
+                            }
+                        }
+                    }
+                    //3rd
+                    if (File.Exists(predictionPath_3))
+                    {
+                        //append data  
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(predictionPath_3, true))
+                        {
+                            string str;
+                            for (int i = 0; i < predictList_3rd.Count; i++)
+                            {
+                                str = "" + predictList_3rd[i];
+                                file.WriteLine(str);
+                            }
+                        }
+                    }
+                    //4th
+                    if (File.Exists(predictionPath_4))
+                    {
+                        //append data  
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(predictionPath_4, true))
+                        {
+                            string str;
+                            for (int i = 0; i < predictList_4th.Count; i++)
+                            {
+                                str = "" + predictList_4th[i];
+                                file.WriteLine(str);
+                            }
+                        }
+                    }
 
                 }
             }
@@ -481,8 +556,9 @@ namespace XNAServerClient
         {
             base.Draw(spriteBatch);
 
-            spriteBatch.DrawString(font, "prediction: " + show_prediction, new Vector2(20,770),Color.Red);
-            spriteBatch.DrawString(font, "real: " + move_y, new Vector2(20, 750), Color.Red);
+            spriteBatch.DrawString(font, "pred_3: " + show_prediction_3rd, new Vector2(20, 770), Color.Red);
+            spriteBatch.DrawString(font, "pred_4: " + show_prediction_4th, new Vector2(20,750),Color.Red);
+            spriteBatch.DrawString(font, "real: " + move_y, new Vector2(20, 730), Color.Red);
 
             ball.Draw(spriteBatch);
             platform_player.Draw(spriteBatch);
@@ -611,19 +687,37 @@ namespace XNAServerClient
                 //db = Math.Sqrt(db);
 
                 //take in singel independent variable
-                //db = predict_disToPlatform(db);
+                db = predict_disToPlatform(db);
+
+                if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPrediction_1)
+                {
+                    show_prediction_1st = db;
+                    hasPrediction_1 = true;
+                }
 
                 /*
                  * take in 2 variables
                  * distance between ball and platform 
                  * ball x speed
                  */
-                //db = predict_disToPlatform(db, (int)ball.Velocity.X);
+                db = predict_disToPlatform(db, (int)ball.Velocity.X);
+
+                if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPrediction_2)
+                {
+                    show_prediction_2nd = db;
+                    hasPrediction_2 = true;
+                }
 
                 /*
                  * fourh param platfomr x position 
                  */
                 db = predict_disToPlatform(db, (int)ball.Velocity.X, (int)ball.Position.X, (int)platform_player.Position.X);
+                
+                if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPrediction_3)
+                {
+                    show_prediction_3rd = db;
+                    hasPrediction_3 = true;
+                }
 
                 /*
                  * if ball hit window edge once when going down
@@ -631,12 +725,11 @@ namespace XNAServerClient
                 if (windowEdge.Y != 0)
                     db = predict_disToPlatform(db, (int)ball.Velocity.X,
                         (int)ball.Position.X, (int)platform_player.Position.X, (int)windowEdge.X);
-
-
-                if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPrediction)
+                
+                if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPrediction_4)
                 {
-                    show_prediction = db;
-                    hasPrediction = true;
+                    show_prediction_4th = db;
+                    hasPrediction_4 = true;
                 }
             }
         }
