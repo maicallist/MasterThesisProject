@@ -782,7 +782,7 @@ namespace XNAServerClient
             double veld = Math.Pow(vel, 2) + 100;
             veld = Math.Sqrt(veld);
             y = Math.Round(706.3240273 + -0.965004 * dis + 2.2408532 * veld
-                + 0.0410435 * posx + 0.1021678 * platx);
+                + 0.0410435 * posx + 0.1021678 * platx, 3);
 
             return y;
         }
@@ -799,7 +799,7 @@ namespace XNAServerClient
             double y;
             y = Math.Round(706.5644181 + -0.9503573 * dis
                 + 0.0497304 * posx + 0.1652617 * platx
-                + 0.0655089 * windowEdge.X);
+                + 0.0655089 * windowEdge.X, 3);
 
             return y;
         }
