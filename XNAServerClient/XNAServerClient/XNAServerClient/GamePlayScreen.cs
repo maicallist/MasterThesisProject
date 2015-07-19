@@ -19,12 +19,15 @@ namespace XNAServerClient
     {
         #region Variables
 
+        //game objects
         Platform platform_local;
         Platform platform_remote;
         Ball ball;
 
+        //text member
         SpriteFont font;
 
+        //game state
         bool gameStart;
 
         /* 4.0 */
@@ -46,12 +49,15 @@ namespace XNAServerClient
         //lag just past, need check consistency
         bool consisCheck;
 
+        //XNA Lobby, Matching
         enum GameState { Menu, FindGame, PlayGame }
         enum SessionProperty { GameMode, SkillLevel, ScoreToWin }
         enum GameMode { Practice, Timed, CaptureTheFlag }
         enum SkillLevel { Beginner, Intermediate, Advanced }
         enum PacketType { Enter, Leave, Data }
 
+        //store remote game state
+        //process and render on local screen
         Char hostTag;
         Vector2 ballPos;
         Vector2 ballVel;
@@ -332,9 +338,31 @@ namespace XNAServerClient
             }
 
             //testing lag below
-            if (session != null)
+            //because we record client local state and host remote state
+            //so here, we only apply lag to client side
+
+            //Quote from MSDN
+            //The latency simulation is applied on the sending machine, 
+            //so if you set this property differently on each machine, 
+            //only outgoing packets will be affected by the local value of the property.
+
+            //Latency introduced through this setting is not included in the RoundtripTime property, 
+            //which always just reports the physical network latency.
+
+            //Packets sent without any ordering guarantee will be given 
+            //a random latency normally distributed around the specified value, 
+            //introducing packet reordering as well as raw latency. 
+            //Packets sent using SendDataOptions.InOrder will be delayed without reordering.
+
+            //we use SendDataOptions.InOrder
+            //see SendPackets()
+            if (session != null && !isServer)
             {
-                TimeSpan lagh = new TimeSpan(0, 0, 0, 0, 800);
+                var rnd = new Random();
+                // create a number, 1 <= int <= 1000
+                int randomLag = rnd.Next(1, 1001);
+
+                TimeSpan lagh = new TimeSpan(0, 0, 0, 0, randomLag);
                 session.SimulatedLatency = lagh;
             }
 
