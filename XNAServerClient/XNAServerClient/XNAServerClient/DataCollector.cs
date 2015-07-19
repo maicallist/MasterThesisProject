@@ -190,28 +190,6 @@ namespace XNAServerClient
                     predictList_3rd.Add("prediction\t" + show_prediction_3rd + "\treal\t" + move_y);
                     predictList_4th.Add("prediction\t" + show_prediction_4th + "\treal\t" + move_y);
                     
-                    ////if platform is moving while collade, add extra speed to ball
-                    //if (platform_player.Velocity.X > 0)
-                    //{
-                    //    if (ball.Velocity.X > 0 || ball.Velocity.X < -5)
-                    //        ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
-                    //    /* I can only catch 22 */
-                    //    /* so max speed 22 */
-                    //    if (ball.Velocity.X > 22)
-                    //        ball.Velocity = new Vector2(22, ball.Velocity.Y);
-                    //}
-                    //else if (platform_player.Velocity.X < 0)
-                    //{
-                    //    if (ball.Velocity.X > 5 || ball.Velocity.X < 0)
-                    //        ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
-                    //    /* I can only catch 22 */
-                    //    /* so max speed 22 */
-                    //    if (ball.Velocity.X < -22)
-                    //        ball.Velocity = new Vector2(-22, ball.Velocity.Y);
-                    //}
-
-                    
-
                     //if ball center is higher than platform, ball's velocity Y is negative 
                     //if ball center is lower than platform, ball's velocity Y is positive
                     //these two param used for statistics and collision 

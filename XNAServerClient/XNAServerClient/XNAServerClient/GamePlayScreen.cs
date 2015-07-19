@@ -81,6 +81,14 @@ namespace XNAServerClient
         ArrayList clientSide;
         ArrayList clientVel;
 
+        //record time
+        //global clock
+        DateTime startTimeInt;
+        //local clock
+        TimeSpan startTime;
+        TimeSpan current;
+        ArrayList timeTag;
+
         #endregion
 
         public override void LoadContent(ContentManager Content, InputManager inputManager)
@@ -130,6 +138,8 @@ namespace XNAServerClient
             hostSide = new ArrayList();
             hostVel = new ArrayList();
             clientVel = new ArrayList();
+
+            timeTag = new ArrayList();
         }
 
         public override void UnloadContent()
@@ -145,6 +155,9 @@ namespace XNAServerClient
 
         public override void Update(GameTime gameTime)
         {
+            //get current time for recording
+            if(gameStart)
+                current = gameTime.TotalGameTime - startTime;
             /*
              * only sned data when necessary
              * collad with platform
@@ -160,6 +173,10 @@ namespace XNAServerClient
                 {
                     ball.Velocity = new Vector2(-7, -10);
                     gameStart = true;
+                    //record local game start time
+                    startTime = gameTime.TotalGameTime;
+                    //record internet game start time
+                    startTimeInt = NTP.GetNetworkTime();
                     sendPacket = true;
                 }
             }
@@ -217,11 +234,16 @@ namespace XNAServerClient
                     using (System.IO.StreamWriter file = new System.IO.StreamWriter(path, true))
                     {
                         string str;
+
+                        //write in clock sync info
+                        str = "Start\t" + startTime + "\tGlobal\t" + startTimeInt;
+                        file.WriteLine(str);
+
                         if (isServer)
                         {
                             for (int i = 0; i < hostSide.Count; i++)
                             {
-                                str = hostSide[i] + "\t" + hostVel[i];
+                                str = timeTag[i] + "\t" + hostSide[i] + "\t" + hostVel[i];
                                 file.WriteLine(str);
                             }
                         }
@@ -229,7 +251,7 @@ namespace XNAServerClient
                         {
                             for (int i = 0; i < clientSide.Count; i++)
                             {
-                                str = clientSide[i] + "\t" + clientVel[i];
+                                str = timeTag[i] + "\t" + clientSide[i] + "\t" + clientVel[i];
                                 file.WriteLine(str);
                             }
                         }
@@ -324,6 +346,7 @@ namespace XNAServerClient
                     if (!deadMoving)
                     {
                         deadMoving = true;
+                        timeTag.Add(current);
                         clientSide.Add(ball.Position.Y);
                         clientVel.Add(ball.Velocity.Y);
                     }
@@ -829,6 +852,7 @@ namespace XNAServerClient
                                 //bot platform y = 755
                                 //thus ball to top platform : ball.y - 45
                                 //invert position : 755 - ball + 45
+                                timeTag.Add(current);
                                 hostSide.Add(ball.Position.Y);
                                 hostVel.Add(ball.Velocity.Y);
                             }
@@ -988,24 +1012,6 @@ namespace XNAServerClient
                 platform_remote.Position += (remotePlatformVel * new Vector2(-1, -1));
         }
 
-        public void DeadReckoningProcess()
-        {
-            /* 
-             * in this algorithm
-             * what we need to do is
-             * when receive a 'l' tag
-             * we look up the previous packet
-             * calculate remote platform position
-             */
-
-            /*
-             *   Char hostTag;
-             *   Vector2 ballPos;
-             *   Vector2 ballVel;
-             *   Vector2 remotePlatformPos;
-             *   Vector2 remotePlatformVel;
-             */
-        }
         #endregion
     }
 }
