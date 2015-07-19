@@ -52,15 +52,6 @@ namespace XNAServerClient
         enum SkillLevel { Beginner, Intermediate, Advanced }
         enum PacketType { Enter, Leave, Data }
 
-        //public static struct AppDataUnit
-        //{
-        //    /* 'h' for host, 'k' for online gamer, 'l'indicates lagging tag */
-        //    Char hostTag;
-        //    Vector2 ballPos;
-        //    Vector2 ballVel;
-        //    Vector2 remotePlatformPos;
-        //    Vector2 remotePlatformVel;
-        //}
         Char hostTag;
         Vector2 ballPos;
         Vector2 ballVel;
@@ -200,7 +191,7 @@ namespace XNAServerClient
             //press p to store dead reckoning data
             if (inputManager.KeyPressed(Keys.P))
             {
-                //serilize data
+                //serialize data
                 //output path - file name
                 //see bin/x86/debug/
                 string path;
@@ -240,34 +231,7 @@ namespace XNAServerClient
                 }
             }
 
-            if (inputManager.KeyPressed(Keys.M))
-            { 
             
-            }
-
-            /*
-             * after we have updated local platform state
-             * check do we need to do anything to compensate lag
-             * 
-             */ 
-            // after receive a 'l' tag
-            // processReceivedPacket requires consistency check
-            //compensate lag
-            if (lag)
-            {
-                switch (lagCompen)
-                {
-                    case LagCompensation.None:
-                        // do nothing, let platform flashing on screen
-                        break;
-                    case LagCompensation.DeadReckoning:
-                        //DeadReckoningProcess();
-                        break;
-                    case LagCompensation.PlayPattern:
-
-                        break;
-                }
-            }
 
             /* check collision with local platform */
             Rectangle platformRect_local = platform_local.Rectangle;
@@ -284,23 +248,6 @@ namespace XNAServerClient
                 //check pixel collision
                 if (UpdateCollision(ballRect, ballColor, platformRect_local, platformColor_local))
                 {
-                    ////if platform is moving while collade, add extra speed to ball
-                    //if (platform_local.Velocity.X > 0)
-                    //{
-                    //    if (ball.Velocity.X > 0 || ball.Velocity.X < -9)
-                    //        ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
-                    //    /* I can only catch 22 */
-                    //    if (ball.Velocity.X > 22)
-                    //        ball.Velocity = new Vector2(22, ball.Velocity.Y);
-                    //}
-                    //else if (platform_local.Velocity.X < 0)
-                    //{
-                    //    if (ball.Velocity.X > 9 || ball.Velocity.X < 0)
-                    //        ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
-                    //    if (ball.Velocity.X < -22)
-                    //        ball.Velocity = new Vector2(-22, ball.Velocity.Y);
-                    //}
-
                     //if ball center is higher than platform, ball's velocity Y is negative 
                     //if ball center is lower than platform, ball's velocity Y is positive
                     Vector2 ballOrigin = new Vector2(ball.Origin.X + ballRect.X, ball.Origin.Y + ballRect.Y);
@@ -327,26 +274,6 @@ namespace XNAServerClient
                 //check pixel collision
                 if (UpdateCollision(ballRect, ballColor, platformRect_remote, platformColor_remote))
                 {
-                    ////if platform is moving while collade, add extra speed to ball
-                    //if (platform_remote.Velocity.X > 0)
-                    //{
-                    //    if (ball.Velocity.X > 0 || ball.Velocity.X < -9)
-                    //        ball.Velocity = new Vector2(ball.Velocity.X + 5, ball.Velocity.Y);
-                    //    /* I can only catch 22 */
-                    //    /* so max speed 22 */
-                    //    if (ball.Velocity.X > 22)
-                    //        ball.Velocity = new Vector2(22, ball.Velocity.Y);
-                    //}
-                    //else if (platform_remote.Velocity.X < 0)
-                    //{
-                    //    if (ball.Velocity.X > 9 || ball.Velocity.X < 0)
-                    //        ball.Velocity = new Vector2(ball.Velocity.X - 5, ball.Velocity.Y);
-                    //    /* I can only catch 22 */
-                    //    /* so max speed 22 */
-                    //    if (ball.Velocity.X < -22)
-                    //        ball.Velocity = new Vector2(-22, ball.Velocity.Y);
-                    //}
-                    
                     //if ball center is higher than platform, ball's velocity Y is negative 
                     //if ball center is lower than platform, ball's velocity Y is positive
                     Vector2 ballOrigin = new Vector2(ball.Origin.X + ballRect.X, ball.Origin.Y + ballRect.Y);
@@ -375,6 +302,12 @@ namespace XNAServerClient
             //we check remote platform in receive packet function (host side)
             //let's check client side local platform
             //if platform moves, record it.
+
+            //on host side, we check remote platform (coded in receivePacket())
+            //that's where we get remote platform data
+
+            //on client side, we check local platform so that we can compare the same platform
+            //thus, do it below
             if (!isServer)
             {
                 //skip the case that player presses two buttons at the same time
@@ -846,18 +779,24 @@ namespace XNAServerClient
                         //record dead reckoning
                         //figure out wether platform is moving or not
                         //on host side, we check remote platform
-                        //on local side, we check local platform (coded somewhere else)
+                        //on client side, we check local platform (coded somewhere else in Update() )
+
+                        //remeber
+                        //this position/velocity is still the pos/vel on host screen
+                        //to compare this pos/vel to client pos/vel
+                        //you need to invert it manully
+                        //see void ProcessReceivedPacket()
                         if (isServer)
                         {
                             //first, let's check previous state of deadMoving
-                            //then check received remotePlatformVel, wether causing a state change
+                            //then check received remotePlatformVel, weather causing a state change
                             if (!deadMoving && remotePlatformVel.X != 0)
                             {
                                 deadMoving = true;
                                 //  #record
                                 //what we see is opposite to the other side
                                 //because all players see their platform at bottom
-                                //thus we need to work out what does it look like on the other side
+                                //thus we need to work out how does screen look like on the other side
                                 //top platform y = 20, height 25
                                 //bot platform y = 755
                                 //thus ball to top platform : ball.y - 45
@@ -875,6 +814,8 @@ namespace XNAServerClient
                             //record at #record above
                         }
                         
+                        //we have the data from remote side
+                        //but we need to work out where to render objects on local screen
                         ProcessReceivedPacket();
                     }
                     else if (hostTag == 'l')
@@ -916,7 +857,9 @@ namespace XNAServerClient
             /* remote side position is always inverted */
             /* for non host, we also need to invert ball position */
 
-            //Ball position may not inverted perfectly, I feel
+            //Ball position may not inverted perfectly, I have a feeling
+            
+            
             /* 
              
              Waiting to be further tested!!!
