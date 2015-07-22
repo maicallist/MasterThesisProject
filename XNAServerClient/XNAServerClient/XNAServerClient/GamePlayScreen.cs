@@ -413,7 +413,7 @@ namespace XNAServerClient
                     if (sendPacket)
                         sendPacket = false;
                     //test random lag generator
-                    TestLatency();
+                    //TestLatency();
                 }
                 ReceivePackets();
 
