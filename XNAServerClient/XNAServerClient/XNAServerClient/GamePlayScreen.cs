@@ -83,11 +83,17 @@ namespace XNAServerClient
 
         //record time
         //global clock
-        DateTime startTimeInt;
+        static DateTime startTimeInt;
         //local clock
-        TimeSpan startTime;
-        TimeSpan current;
+        static TimeSpan startTime;
+        static TimeSpan current;
         ArrayList timeTag;
+        ArrayList timeTagInMillisec;
+
+        //communication latency between
+        //client and host
+        //local start time
+        static long initLagInMillisec = 0;
 
         /*******************************************/
         /*all variables defined beliw are temproral*/
@@ -144,6 +150,7 @@ namespace XNAServerClient
             clientVel = new ArrayList();
 
             timeTag = new ArrayList();
+            timeTagInMillisec = new ArrayList();
         }
 
         public override void UnloadContent()
@@ -164,7 +171,8 @@ namespace XNAServerClient
                 current = gameTime.TotalGameTime - startTime;
             /*
              * only sned data when necessary
-             * collad with platform
+             * collade with platform
+             * move platform
              */
             sendPacket = false;
 
@@ -173,8 +181,18 @@ namespace XNAServerClient
 
             if (!gameStart && session != null && session.SessionState == NetworkSessionState.Lobby)
             {
-                if (inputManager.KeyPressed(Keys.Y))
+                if (inputManager.KeyPressed(Keys.Y) && isServer)
                 {
+                    session.StartGame();
+                    //notify all clients
+                    foreach (LocalNetworkGamer gamer in session.LocalGamers)
+                    {
+                        if (isServer)
+                            packetWriter.Write('g');
+                        // Send it to all remote gamers.
+                        gamer.SendData(packetWriter, SendDataOptions.InOrder);
+                    }
+
                     ball.Velocity = new Vector2(-7, -10);
                     gameStart = true;
                     //record local game start time
@@ -182,6 +200,7 @@ namespace XNAServerClient
                     //record internet game start time
                     startTimeInt = NTP.GetNetworkTime();
                     sendPacket = true;
+                    
                 }
             }
 
@@ -215,7 +234,7 @@ namespace XNAServerClient
                 }
             }
 
-            //press p to store dead reckoning data
+            //press p to store dead reckoning data during game
             if (inputManager.KeyPressed(Keys.P))
             {
                 //serialize data
@@ -241,13 +260,15 @@ namespace XNAServerClient
 
                         //write in clock sync info
                         str = "Start\t" + startTime + "\tGlobal\t" + startTimeInt;
+                        if (isServer)
+                            str += "\tInitalLagInMillisecond\t" + initLagInMillisec;
                         file.WriteLine(str);
 
                         if (isServer)
                         {
                             for (int i = 0; i < hostSide.Count; i++)
                             {
-                                str = timeTag[i] + "\t" + hostSide[i] + "\t" + hostVel[i];
+                                str = timeTag[i] + "\t" + hostSide[i] + "\t" + hostVel[i] + "\t" + timeTagInMillisec[i];
                                 file.WriteLine(str);
                             }
                         }
@@ -255,7 +276,7 @@ namespace XNAServerClient
                         {
                             for (int i = 0; i < clientSide.Count; i++)
                             {
-                                str = timeTag[i] + "\t" + clientSide[i] + "\t" + clientVel[i];
+                                str = timeTag[i] + "\t" + clientSide[i] + "\t" + clientVel[i] + "\t" + timeTagInMillisec[i];
                                 file.WriteLine(str);
                             }
                         }
@@ -353,6 +374,7 @@ namespace XNAServerClient
                         timeTag.Add(current);
                         clientSide.Add(ball.Position.Y);
                         clientVel.Add(ball.Velocity.Y);
+                        timeTagInMillisec.Add(current.TotalMilliseconds);
                     }
                 }
                 else
@@ -413,9 +435,18 @@ namespace XNAServerClient
                     if (sendPacket)
                         sendPacket = false;
                     //test random lag generator
+                    /*
+                     * test func sometimes cannot receive response from npt server
+                     * which result in program halt
+                     * an exception handler can avoid this situation
+                     * 
+                     * my task is only to validate weather the random
+                     * latency generator working or not
+                     * So! if you need the handler, implement it below
+                     */
                     //TestLatency();
                 }
-                ReceivePackets();
+                ReceivePackets(gameTime);
 
                 //Update the NetworkSession
                 session.Update();
@@ -808,7 +839,7 @@ namespace XNAServerClient
         /// ReadPackets is responsible for reading and storing all information 
         /// from a received packet.
         /// </summary>
-        void ReceivePackets()
+        void ReceivePackets(GameTime gameTime)
         {
             NetworkGamer sender;
 
@@ -867,6 +898,7 @@ namespace XNAServerClient
                                 timeTag.Add(current);
                                 hostSide.Add(ball.Position.Y);
                                 hostVel.Add(ball.Velocity.Y);
+                                timeTagInMillisec.Add(current.TotalMilliseconds);
                             }
                             else if (deadMoving && remotePlatformVel.X == 0)
                                 deadMoving = false;
@@ -915,6 +947,27 @@ namespace XNAServerClient
                         long clientTicks = BitConverter.ToInt64(bytes, 0);
 
                         Console.WriteLine("Possible Latency(CTH) : " + (hostTicks - clientTicks)/10000 + " ms");
+                    }
+                    else if (hostTag == 'g' && !isServer)
+                    { 
+                        //we have received a game start notification from host
+                        ball.Velocity = new Vector2(-7, -10);
+                        gameStart = true;
+                        //record local game start time
+                        startTime = gameTime.TotalGameTime;
+                        //record internet game start time
+                        startTimeInt = NTP.GetNetworkTime();
+                        sendPacket = true;
+                        SendStartIntToHost();
+                    }
+                    else if (hostTag == 'r' && isServer)
+                    {
+                        //client sneds back their internet start time
+                        byte[] bytes = packetReader.ReadBytes(8);
+                        long clientTicks = BitConverter.ToInt64(bytes, 0);
+
+                        long hostTicks = NTP.ElapsedTicks(startTimeInt);
+                        initLagInMillisec = (clientTicks - hostTicks)/10000;
                     }
                 }
             }
@@ -1006,7 +1059,6 @@ namespace XNAServerClient
         //Event Handling
         void session_GamerJoined(object sender, GamerJoinedEventArgs e)
         {
-
         }
         void session_GamerLeft(object sender, GamerLeftEventArgs e)
         {
@@ -1043,8 +1095,8 @@ namespace XNAServerClient
 
         #endregion
 
-        /************************************************/
-        /**********test functions, delete later**********/
+        /************************************/
+        /**********test functions************/
         void TestLatency()
         {
             foreach (LocalNetworkGamer gamer in session.LocalGamers)
@@ -1061,6 +1113,21 @@ namespace XNAServerClient
                 }   
             }
         }
-         
+
+        void SendStartIntToHost()
+        {
+            foreach (LocalNetworkGamer gamer in session.LocalGamers)
+            {
+                if (!isServer)
+                {
+                    long ticks = NTP.ElapsedTicks(startTimeInt);
+                    byte[] bytes = BitConverter.GetBytes(ticks);
+                    packetWriter.Write('r');
+                    packetWriter.Write(bytes);
+                    // Send it to all remote gamers.
+                    gamer.SendData(packetWriter, SendDataOptions.InOrder);
+                }
+            }
+        }
     }
 }
