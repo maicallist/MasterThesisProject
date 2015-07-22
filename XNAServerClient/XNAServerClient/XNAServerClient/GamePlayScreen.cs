@@ -89,6 +89,10 @@ namespace XNAServerClient
         TimeSpan current;
         ArrayList timeTag;
 
+        /*******************************************/
+        /*all variables defined beliw are temproral*/
+        /*******************************************/
+
         #endregion
 
         public override void LoadContent(ContentManager Content, InputManager inputManager)
@@ -121,7 +125,7 @@ namespace XNAServerClient
             packetWriter = new PacketWriter();
 
             /* network variable */
-            hostTag = 'm';
+            hostTag = '/';
             ballPos = new Vector2(0, 0);
             ballVel = new Vector2(0, 0);
             remotePlatformPos = new Vector2(0, 0);
@@ -219,7 +223,7 @@ namespace XNAServerClient
                 //see bin/x86/debug/
                 string path;
                 if (isServer)
-                     path = @".\Remote.txt";
+                    path = @".\Remote.txt";
                 else
                     path = @".\Local.txt";
                 
@@ -408,6 +412,8 @@ namespace XNAServerClient
                     //then remove flag after send packet
                     if (sendPacket)
                         sendPacket = false;
+                    //test random lag generator
+                    TestLatency();
                 }
                 ReceivePackets();
 
@@ -777,7 +783,6 @@ namespace XNAServerClient
         {
             switch (packetType)
             {
-                    
                 case PacketType.Data:
                     {
                         foreach (LocalNetworkGamer gamer in session.LocalGamers)
@@ -812,10 +817,17 @@ namespace XNAServerClient
                 // Keep reading while packets are available.
                 while (gamer.IsDataAvailable)
                 {
-                    // Read a single packet.
+                    //Read a single packet.
                     //Even if we are the host, we must read to clear the queue
                     gamer.ReceiveData(packetReader, out sender);
 
+                    //read one char, see what data this packet contains
+                    /*
+                     * 'h': host game state
+                     * 'k': client game state
+                     * 'l': lag flag
+                     * 'p': ping test
+                     */ 
                     hostTag = packetReader.ReadChar();
                     /* normal packet */
                     /* keep reading following message */
@@ -826,7 +838,7 @@ namespace XNAServerClient
                         ballVel = packetReader.ReadVector2();
                         remotePlatformPos = packetReader.ReadVector2();
                         remotePlatformVel = packetReader.ReadVector2();
-                        
+
                         //record dead reckoning
                         //figure out wether platform is moving or not
                         //on host side, we check remote platform
@@ -865,7 +877,7 @@ namespace XNAServerClient
                             //so we don't need to process packet info
                             //record at #record above
                         }
-                        
+
                         //we have the data from remote side
                         //but we need to work out where to render objects on local screen
                         ProcessReceivedPacket();
@@ -886,6 +898,23 @@ namespace XNAServerClient
                          *  if so, do it below.
                          */
 
+                    }
+                    else if (hostTag == 'p' && isServer)
+                    {
+                        //sometimes client sends a ping request with NTP time
+                        //if we are the host, we get a NTP and compare with ping packet
+                        //to work out client single trip time
+
+                        //A single tick represents one hundred nanoseconds
+                        //There are 10,000 ticks in a millisecond
+
+                        DateTime nowDT = NTP.GetNetworkTime();
+                        long hostTicks = NTP.ElapsedTicks(nowDT);
+
+                        byte[] bytes = packetReader.ReadBytes(8);
+                        long clientTicks = BitConverter.ToInt64(bytes, 0);
+
+                        Console.WriteLine("Possible Latency(CTH) : " + (hostTicks - clientTicks)/10000 + " ms");
                     }
                 }
             }
@@ -1013,5 +1042,25 @@ namespace XNAServerClient
         }
 
         #endregion
+
+        /************************************************/
+        /**********test functions, delete later**********/
+        void TestLatency()
+        {
+            foreach (LocalNetworkGamer gamer in session.LocalGamers)
+            {
+                if (!isServer)
+                {
+                    DateTime pingSent = NTP.GetNetworkTime();
+                    long ticks = NTP.ElapsedTicks(pingSent);
+
+                    packetWriter.Write('p');
+                    packetWriter.Write(ticks);
+                }
+                // Send it to all remote gamers.
+                gamer.SendData(packetWriter, SendDataOptions.InOrder);
+            }
+        }
+         
     }
 }

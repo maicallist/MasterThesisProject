@@ -119,5 +119,14 @@ namespace XNAServerClient
                            ((x & 0x00ff0000) >> 8) +
                            ((x & 0xff000000) >> 24));
         }
+
+        public static long ElapsedTicks(DateTime time)
+        {
+            DateTime begin = new DateTime(2015, 7, 1);
+
+            long elapsedTicks = time.Ticks - begin.Ticks;
+
+            return elapsedTicks;
+        }
     }
 }
