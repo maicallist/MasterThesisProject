@@ -1053,9 +1053,9 @@ namespace XNAServerClient
                 {
                     DateTime pingSent = NTP.GetNetworkTime();
                     long ticks = NTP.ElapsedTicks(pingSent);
-
+                    byte[] bytes = BitConverter.GetBytes(ticks);
                     packetWriter.Write('p');
-                    packetWriter.Write(ticks);
+                    packetWriter.Write(bytes);
                 }
                 // Send it to all remote gamers.
                 gamer.SendData(packetWriter, SendDataOptions.InOrder);
