@@ -1056,9 +1056,9 @@ namespace XNAServerClient
                     byte[] bytes = BitConverter.GetBytes(ticks);
                     packetWriter.Write('p');
                     packetWriter.Write(bytes);
-                }
-                // Send it to all remote gamers.
-                gamer.SendData(packetWriter, SendDataOptions.InOrder);
+                    // Send it to all remote gamers.
+                    gamer.SendData(packetWriter, SendDataOptions.InOrder);
+                }   
             }
         }
          
