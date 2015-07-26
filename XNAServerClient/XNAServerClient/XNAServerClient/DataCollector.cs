@@ -796,16 +796,16 @@ namespace XNAServerClient
         private void MoveComPlatform(float target, int flag)
         {
             //we are at right position, stop moving
-            if (target >= platform_com.Position.X + platform_com.Dimension.X && target <= platform_com.Position.X + platform_com.Dimension.X)
+            if (target >= platform_com.Position.X + platform_com.Dimension.X / 5 * 2 && target <= platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
             {
                 if (flag == 1)
                     movePlatformCom = false;
                 else if (flag == 2)
                     moveComPlatformWrong = false;
             }
-            else if (target < platform_com.Position.X + platform_com.Dimension.X)
+            else if (target < platform_com.Position.X + platform_com.Dimension.X / 5 * 2)
                 platform_com.Position = new Vector2(platform_com.Position.X - platform_com.MoveSpeed, platform_com.Position.Y);
-            else if (target > platform_com.Position.X + platform_com.Dimension.X)
+            else if (target > platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
                 platform_com.Position = new Vector2(platform_com.Position.X + platform_com.MoveSpeed, platform_com.Position.Y);
         }
 
@@ -905,9 +905,7 @@ namespace XNAServerClient
 
         //sometimes targetWrongX is outside of screnn
         //so we need to make platform wait at position 0 or screenWidth-platformWidth
-        //this method is called when platform is at window edge and need to wait
-        //keeping check ball position, calc remaing updates 
-        //move platform when it is too late to catch the ball
+        //this method is called when 
         private void AICheckWaiting()
         { 
         
