@@ -378,11 +378,36 @@ namespace XNAServerClient
                     case Diffculty.ExtremeHard:     
                         //move to the wrong position first
                         //then move to right position
-                        if (movePlatformCom && moveComPlatformWrong)
+                        if (moveComPlatformWrong)
                         {
-                            MoveComPlatform(targetWrongX, 2);
+                            //if we just let it do 
+                            //MoveComPlatform(targetWrongX, 2);
+                            //AI definately gonna miss the ball
+                            //so we can give it a random
+                            //directly set !moveComPlatformWrong
+                            //then it moves back to right position
+                            //while it was on its way to wrong position
+                            //and still catches the ball
+
+                            //if all random results do 
+                            //MoveComPlatform(targetWrongX, 2);
+                            //then miss the ball
+                            //which is P^n
+                            Random rnd = new Random();
+                            //get a number between 1 to 10
+                            int num = rnd.Next(1, 11);
+
+                            //this if condition controls 
+                            //how often AI can catches the ball
+                            //change it as you want
+                            //num < 6 is 50%
+                            if (num < 6)
+                                MoveComPlatform(targetWrongX, 2);
+                            else
+                                //go to right position
+                                moveComPlatformWrong = false;
                         }
-                        else if (movePlatformCom && !moveComPlatformWrong)
+                        else if (!moveComPlatformWrong)
                         {
                             MoveComPlatform(targetPositionX, 1);
                         }
