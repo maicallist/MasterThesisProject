@@ -370,7 +370,9 @@ namespace XNAServerClient
              * then move back
              */ 
 
-
+            //extrem hard: move to wrong direction then move back
+            //very hard: move platform when its too late
+            //hard: just doesn't move
             if (movePlatformCom)
             {
                 switch (level)

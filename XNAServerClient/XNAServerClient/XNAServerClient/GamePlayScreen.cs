@@ -187,6 +187,7 @@ namespace XNAServerClient
                     //notify all clients
                     foreach (LocalNetworkGamer gamer in session.LocalGamers)
                     {
+                        //tell all clients to start game
                         if (isServer)
                             packetWriter.Write('g');
                         // Send it to all remote gamers.
@@ -408,9 +409,9 @@ namespace XNAServerClient
             if (session != null && !isServer)
             {
                 var rnd = new Random();
-                // create a number, 1 <= int <= 1000
+                //create a number, 1 <= int <= 1000
                 int randomLag = rnd.Next(1, 1001);
-
+                //apply lag
                 TimeSpan lagh = new TimeSpan(0, 0, 0, 0, randomLag);
                 session.SimulatedLatency = lagh;
             }
@@ -818,6 +819,7 @@ namespace XNAServerClient
                     {
                         foreach (LocalNetworkGamer gamer in session.LocalGamers)
                         {
+                            //mark host and client
                             if (isServer)
                                 packetWriter.Write('h');
                             else
@@ -857,7 +859,14 @@ namespace XNAServerClient
                      * 'h': host game state
                      * 'k': client game state
                      * 'l': lag flag
-                     * 'p': ping test
+                     * 'p': ping test //only enable this to test if random lag function is working
+                     *      you should not receive this char in real game
+                     *      NTP server is unstable, causing timedout exception
+                     *      
+                     * 'g': client side starts game, send NTP time to host
+                     * 'r': host receives client NTP time, 
+                     *      process it and compare to local NTP time
+                     *      work out how much time between two side started the game
                      */ 
                     hostTag = packetReader.ReadChar();
                     /* normal packet */
@@ -922,8 +931,7 @@ namespace XNAServerClient
                         lag = !lag;
                         consisCheck = true;
 
-                        /*
-                         * 
+                        /* 
                          *  ATTITION
                          *  as receiver, may be we need send a packet
                          *  to update server, right after lag.
@@ -933,9 +941,12 @@ namespace XNAServerClient
                     }
                     else if (hostTag == 'p' && isServer)
                     {
+                        /* Only Used When Testing Random Lag */
+
                         //sometimes client sends a ping request with NTP time
-                        //if we are the host, we get a NTP and compare with ping packet
-                        //to work out client single trip time
+                        //if we are the host, we request a NTP immediately when we received this char 
+                        //and compare NTP with the NTP(client) in ping packet
+                        //to work out client to host single trip time
 
                         //A single tick represents one hundred nanoseconds
                         //There are 10,000 ticks in a millisecond
@@ -962,7 +973,9 @@ namespace XNAServerClient
                     }
                     else if (hostTag == 'r' && isServer)
                     {
-                        //client sneds back their internet start time
+                        //client sends back their internet start time
+                        //if we are the host, work out 
+                        //client to host single trip time
                         byte[] bytes = packetReader.ReadBytes(8);
                         long clientTicks = BitConverter.ToInt64(bytes, 0);
 
@@ -991,14 +1004,10 @@ namespace XNAServerClient
             /* remote side position is always inverted */
             /* for non host, we also need to invert ball position */
 
-            //Ball position may not inverted perfectly, I have a feeling
+            //Ball position may not be inverted perfectly, I have a feeling
             
             
-            /* 
-             
-             Waiting to be further tested!!!
-             
-             */
+            /* Waiting to be further tested!!! */
             if (hostTag == 'h' && !isServer && !lag)
             {
                 ball.Position = new Vector2(screenWidth, screenHeight) - (ballPos + ball.Origin) - ball.Origin;
@@ -1097,6 +1106,10 @@ namespace XNAServerClient
 
         /************************************/
         /**********test functions************/
+        /***********delete later*************/
+
+        //if client, request a NTP and send it to host
+        //so host can work out client to host trip time
         void TestLatency()
         {
             foreach (LocalNetworkGamer gamer in session.LocalGamers)
@@ -1114,6 +1127,7 @@ namespace XNAServerClient
             }
         }
 
+        //client send NTP start time to host
         void SendStartIntToHost()
         {
             foreach (LocalNetworkGamer gamer in session.LocalGamers)
