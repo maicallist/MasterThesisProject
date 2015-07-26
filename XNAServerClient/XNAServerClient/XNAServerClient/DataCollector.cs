@@ -71,6 +71,16 @@ namespace XNAServerClient
         Vector2 windowEdge;
         //only record platform once
         bool platformHasMoved = false;
+
+        //AI Patch
+        enum Diffculty { Hard, VeryHard, ExtremHard}
+        Diffculty level; 
+        //everytime player bounces ball back
+        //we work out com position once 
+        //for different AI level
+        //we may tamper this position variable
+        //to make com platform miss the ball
+        bool decidedComPosition;
         #endregion
 
         #region XNA functions
@@ -120,6 +130,9 @@ namespace XNAServerClient
             predictList_3rd = new ArrayList();
             predictList_4th = new ArrayList();
             windowEdge = new Vector2(0, 0);
+
+            level = Diffculty.Hard;
+            decidedComPosition = false;
         }
 
         public override void UnloadContent()
@@ -132,6 +145,7 @@ namespace XNAServerClient
 
         public override void Update(GameTime gameTime)
         {
+            //current game time, used in data collection
             if (start)
                 current = gameTime.TotalGameTime - startTime;
             inputManager.Update();
@@ -140,6 +154,8 @@ namespace XNAServerClient
             { 
                 /* prevent ball moving before start */
                 ball.Velocity = new Vector2(0, 0);
+
+                //start state and re-start state
                 if (inputManager.KeyPressed(Keys.Space))
                 {
                     if (!start && !end)
@@ -151,25 +167,30 @@ namespace XNAServerClient
                     }
                     else if (!start && end)
                     {
+                        //reload game screen to restart
                         Type newClass = Type.GetType("XNAServerClient.DataCollector");
                         ScreenManager.Instance.AddScreen((GameScreen)Activator.CreateInstance(newClass), inputManager);
                     }
                 }
             }
 
-             //update ball speed based on hits
-             //ball speeds up every 4 hits
-             if (accelCounter == 3)
-             {
-                 if (ball.Velocity.X > 0)
-                     ball.Velocity = new Vector2(ball.Velocity.X + 2, ball.Velocity.Y);
-                 else
-                     ball.Velocity = new Vector2(ball.Velocity.X - 2, ball.Velocity.Y);
-                 accelCounter = 0;
- 
-                 if (ball.Velocity.Y < 0)
-                     MovingPlatformCom();
-             }
+            //ball acceleration
+            //update ball speed based on hits
+            //ball speeds up every 4 hits
+            if (accelCounter == 3)
+            {
+                if (ball.Velocity.X > 0)
+                    ball.Velocity = new Vector2(ball.Velocity.X + 2, ball.Velocity.Y);
+                else
+                    ball.Velocity = new Vector2(ball.Velocity.X - 2, ball.Velocity.Y);
+                accelCounter = 0;
+                //after we accelerate the ball
+                //we need to check where ball lands again
+                if (ball.Velocity.Y < 0)
+                    CalcComPlatformPosition();
+            }
+
+            //check collision below
 
             Rectangle platformRect_player = platform_player.Rectangle;
             Color[] platformColor_player = platform_player.ColorData;
@@ -219,14 +240,17 @@ namespace XNAServerClient
                         +"\tBallVel\t" + ball.Velocity.X + "," + ball.Velocity.Y
                         +"\tPlatOrigin\t" + platformOrigin_player.X + "," + platformOrigin_player.Y
                         +"\tPlatVel\t" + platform_player.Velocity.X + "," + platform_player.Velocity.Y);
+                    //update how many rounds we have played (1 player catch + 1 com catch = 1 round) 
                     rounds++;
-                    //see how collision change ball state
+
+                    //see how collision changes ball state
                     //platform height is 25, so check -12 to 12 around origin.y
                     if ((ballOrigin.Y - platformOrigin_player.Y) <= -12)
                     {
                         ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y) * -1);
                         //Console.WriteLine("Collading #2 " + gameTime.TotalGameTime);
-                        MovingPlatformCom();
+                        if (!decidedComPosition)
+                            CalcComPlatformPosition();
                     }
                     else if ((ballOrigin.Y - platformOrigin_player.Y) >= 12)
                     {
@@ -247,7 +271,9 @@ namespace XNAServerClient
                 //check pixel collision
                 if (UpdateCollision(ballRect, ballColor, platformRect_com, platformColor_com))
                 {
-                    //restore prediction state
+                    //we have collected prediction data when ball collide with player platform
+                    //now for next round of prediction, we need to reset everything
+                    //reset prediction state
                     hasPrediction_1 = false;
                     hasPrediction_2 = false;
                     hasPrediction_3 = false;
@@ -256,9 +282,20 @@ namespace XNAServerClient
                     show_prediction_2nd = 0;
                     show_prediction_3rd = 0;
                     show_prediction_4th = 0;
+                    //move_y is observed position when player moved platform
                     move_y = 0;
+                    //last time ball reached window edge/border
                     windowEdge = new Vector2(0, 0);
                     platformHasMoved = false;
+
+                    //AI state
+                    //moveComPlatform is reset 
+                    //when platform_com is at roughly right position
+                    //we still need to reset
+                    //AI state for next round
+                    //so AI can calculate new position
+                    decidedComPosition = false;
+
                     //if ball center is higher than platform, ball's velocity Y is negative 
                     //if ball center is lower than platform, ball's velocity Y is positive
                     Vector2 ballOrigin = new Vector2(ball.Origin.X + ballRect.X, ball.Origin.Y + ballRect.Y);
@@ -297,15 +334,57 @@ namespace XNAServerClient
 
             // AI 
             //move platform com when required
+
+            //per Shen's request
+            //we need to make AI sometimes misses ball
+            //so we can investigate that
+            //can a player realize who he/she is playing with
+            //an computer AI or our predition models or real player
+
+            //two ways to do this
+            //limit start timing
+            /*
+             * we limit com platform start timing 
+             * based on ball's current vertical postion
+             * 
+             * eg. com platform starts to move
+             * while ball.pos.y > 200 and y < 300
+             */ 
+
+
+            //random hit/miss rate
+            /*
+             * generate a random number first
+             * eg. Random(0,1)
+             * if rnd > 0.5, next round hits
+             * if rnd <= 0.5, next round misses
+             * 
+             * if miss, we calculate how many update 
+             * platform_com needs to move to the right position
+             * 
+             * force platform wait until it is too late
+             * then move the platform
+             * 
+             * OR
+             * intentionally move platform to the other direction
+             * then move back
+             */ 
+
+
             if (movePlatformCom)
             {
-                //we are at right position, stop moving
-                if (targetPositionX >= platform_com.Position.X + platform_com.Dimension.X/5*2 && targetPositionX <= platform_com.Position.X + platform_com.Dimension.X/5*3)
-                    movePlatformCom = false;
-                else if (targetPositionX < platform_com.Position.X + platform_com.Dimension.X/5*2)
-                    platform_com.Position = new Vector2(platform_com.Position.X - platform_com.MoveSpeed, platform_com.Position.Y);
-                else if (targetPositionX > platform_com.Position.X + platform_com.Dimension.X/5*3)
-                    platform_com.Position = new Vector2(platform_com.Position.X + platform_com.MoveSpeed, platform_com.Position.Y);
+                switch (level)
+                {
+                    case Diffculty.ExtremHard:
+
+                        break;
+                    case Diffculty.VeryHard:
+                        
+                        break;
+                    case Diffculty.Hard:
+
+                        break;
+                }
             }
 
             //prediction record
@@ -335,7 +414,9 @@ namespace XNAServerClient
             
             /* check game end condition */
             //if part of ball image is below screen, then game end
-            if (ball.Position.Y + ball.ImageHeight > ScreenManager.Instance.Dimensions.Y)
+
+            if (ball.Position.Y + ball.ImageHeight > ScreenManager.Instance.Dimensions.Y
+                || ball.Position.Y < 0)
             {
                 //pop in end game state
                 //current = gameTime.TotalGameTime - startTime; ;
@@ -582,7 +663,14 @@ namespace XNAServerClient
         }
 
         /* move com platform to hit ball back */
-        public void MovingPlatformCom()
+
+        //this function only work out where ball lands 
+        //when moving up to platform_com direction
+        //then update a flag "movePlatformCom"
+
+        //in Update() we check the flag
+        //if flag is up, we move platform to targetPositionX 
+        public void CalcComPlatformPosition()
         { 
             // hit position at Y 20 + platform.height
             // use current position and velocity to estimate (X, 20 + platform.height)
@@ -591,7 +679,7 @@ namespace XNAServerClient
             float temp = ball.Position.Y - 20 - platform_com.Dimension.Y;
             //which takes how many updates (vertical speed, 10 per update)
             temp = temp / 10;
-            //apply to harizontal, this coordinates is likely out side of windows
+            //apply to harizontal, this coordinates is likely outside of windows
             estPosition.X = estPosition.X + ball.Velocity.X * temp;
             estPosition.Y = 20 + platform_com.Dimension.Y;
 
@@ -607,6 +695,7 @@ namespace XNAServerClient
                     //we have worked out a position
                     //now require to move
                     movePlatformCom = true;
+                    decidedComPosition = true;
                     break;
                 }
                 else if (estPosition.X > windowWidth) //ball hits right windows border
@@ -642,7 +731,32 @@ namespace XNAServerClient
                 }
             }
         }
-        
+
+        #region AI
+
+        //move com platform to where ball lands on top of screen
+        private void MoveComPlatform()
+        {
+            //we are at right position, stop moving
+            if (targetPositionX >= platform_com.Position.X + platform_com.Dimension.X / 5 * 2 && targetPositionX <= platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
+                movePlatformCom = false;
+            else if (targetPositionX < platform_com.Position.X + platform_com.Dimension.X / 5 * 2)
+                platform_com.Position = new Vector2(platform_com.Position.X - platform_com.MoveSpeed, platform_com.Position.Y);
+            else if (targetPositionX > platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
+                platform_com.Position = new Vector2(platform_com.Position.X + platform_com.MoveSpeed, platform_com.Position.Y);
+        }
+
+        //when this method is called
+        //we have already work out the right targetPositionX
+        //we now need to move platform_com to wrong direction
+        //then move it to targetPositionX
+        //So it can miss the ball
+        private void MoveComPlatformToWrongPosition()
+        {
+
+        }
+        #endregion
+
         #endregion
 
         #region Predictions
