@@ -73,7 +73,7 @@ namespace XNAServerClient
         bool platformHasMoved = false;
 
         //AI Patch
-        enum Diffculty { Hard, VeryHard, ExtremHard}
+        enum Diffculty { Hard, VeryHard, ExtremeHard}
         Diffculty level; 
         //everytime player bounces ball back
         //we work out com position once 
@@ -81,6 +81,12 @@ namespace XNAServerClient
         //we may tamper this position variable
         //to make com platform miss the ball
         bool decidedComPosition;
+        //wrong position in AI patch
+        //move to wrong pos first
+        //then move to targetPositionX
+        float targetWrongX;
+        bool moveComPlatformWrong;
+        bool decidedComPosWrong;
         #endregion
 
         #region XNA functions
@@ -107,7 +113,7 @@ namespace XNAServerClient
             start = false;
             end = false;
 
-            targetPositionX = 0;
+            targetPositionX = 0f;
             movePlatformCom = false;
             //inital statistics collection
             
@@ -133,6 +139,9 @@ namespace XNAServerClient
 
             level = Diffculty.Hard;
             decidedComPosition = false;
+            targetWrongX = 0f;
+            moveComPlatformWrong = false;
+            decidedComPosWrong = false;
         }
 
         public override void UnloadContent()
@@ -295,6 +304,8 @@ namespace XNAServerClient
                     //AI state for next round
                     //so AI can calculate new position
                     decidedComPosition = false;
+                    //this controls platform move to wrong position
+                    decidedComPosWrong = false;
 
                     //if ball center is higher than platform, ball's velocity Y is negative 
                     //if ball center is lower than platform, ball's velocity Y is positive
@@ -372,18 +383,33 @@ namespace XNAServerClient
 
             //extrem hard: move to wrong direction then move back
             //very hard: move platform when its too late
-            //hard: just doesn't move
+            //hard: just move it
             if (movePlatformCom)
             {
                 switch (level)
                 {
-                    case Diffculty.ExtremHard:
+                    case Diffculty.ExtremeHard:
+                        //only calc once
+                        if (!decidedComPosWrong)
+                            CalcComPlatformPosition();
+                        //move to the wrong position first
+                        //then move to right position
+                        if (movePlatformCom && moveComPlatformWrong)
+                        {
+
+                        }
+                        else if (movePlatformCom && !moveComPlatformWrong)
+                        {
+
+                        }
 
                         break;
                     case Diffculty.VeryHard:
                         
+
                         break;
                     case Diffculty.Hard:
+                        MoveComPlatform(targetWrongX);
 
                         break;
                 }
@@ -664,6 +690,7 @@ namespace XNAServerClient
             return false;
         }
 
+        #region AI
         /* move com platform to hit ball back */
 
         //this function only work out where ball lands 
@@ -734,17 +761,15 @@ namespace XNAServerClient
             }
         }
 
-        #region AI
-
         //move com platform to where ball lands on top of screen
-        private void MoveComPlatform()
+        private void MoveComPlatform(float target)
         {
             //we are at right position, stop moving
-            if (targetPositionX >= platform_com.Position.X + platform_com.Dimension.X / 5 * 2 && targetPositionX <= platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
+            if (target >= platform_com.Position.X + platform_com.Dimension.X / 5 * 2 && target <= platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
                 movePlatformCom = false;
-            else if (targetPositionX < platform_com.Position.X + platform_com.Dimension.X / 5 * 2)
+            else if (target < platform_com.Position.X + platform_com.Dimension.X / 5 * 2)
                 platform_com.Position = new Vector2(platform_com.Position.X - platform_com.MoveSpeed, platform_com.Position.Y);
-            else if (targetPositionX > platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
+            else if (target > platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
                 platform_com.Position = new Vector2(platform_com.Position.X + platform_com.MoveSpeed, platform_com.Position.Y);
         }
 
@@ -753,9 +778,74 @@ namespace XNAServerClient
         //we now need to move platform_com to wrong direction
         //then move it to targetPositionX
         //So it can miss the ball
-        private void MoveComPlatformToWrongPosition()
-        {
 
+        //two ways
+        //make platform stop at a wrong position for sometime
+        //or
+        //make platform keep moving to wrong direction
+        //until there is not enough time for it gets to right position
+        //
+        //note the 2nd way
+        //that position may be outside of our screen
+
+        //so..let's get this done
+        private void CalcComWrongPosition()
+        {
+            //this is the distance we need to move to the right position
+            float trueDistance = Math.Abs(targetPositionX - ball.Position.X);
+            
+            //figure out how many updates are there before collision
+            /*
+             * MSDN exmaple of Math.Ceiling(double)
+             * The example displays the following output to the console: 
+             * Value          Ceiling          Floor 
+             *  7.03                8              7 
+             *  7.64                8              7 
+             *  0.12                1              0 
+             *  -7.1               -7             -8 
+             *  
+             * why it returns a double? hmm..
+             */
+            int updates = (int)Math.Ceiling((ball.Position.Y - 45) / 10);
+            //so before collision, if we keeping moving
+            //we at least need to move 
+            //updates * 10 - trueDistance (platform speed is 10f)
+            //therefore the wrong position we need to move to is 
+            //half of that distance: (updated * 10 - trueDistance) / 2
+            //move to wrong pos + move back to where we are now + trueDistance
+            //
+            //varibles was casted, in case there was like 5.99, 5.98 
+            //ceiling it to 6 which is not much different before we cast it
+            //then platform may still be able to collided with ball
+            //under some extreme conditions (CPU schedualing, threading and so on)
+            //let's make it: (updates + 1) * 10 - trueDistance
+            float targetWrongDistance = ((updates + 1) * 10 - trueDistance) / 2; 
+
+            //work out which direction we move
+            //just in case, give it >=, 1 at 580 possibility
+            if (targetPositionX >= ball.Position.X)
+            {
+                //move to left (wrong direction)
+                //check if the target position is outside of screen
+                if (ball.Position.X - targetWrongDistance < 0)
+                { 
+                
+                }
+                else
+                { 
+                    //we can just move it
+                    targetWrongX = ball.Position.X - targetWrongDistance;
+                    moveComPlatformWrong = true;
+                    decidedComPosWrong = true;
+                }
+            }
+            else if (targetPositionX < ball.Position.X)
+            { 
+                //move to right (wrong direction)
+                //check if the target position is outside of screen
+            }
+
+            
         }
         #endregion
 

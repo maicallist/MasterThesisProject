@@ -1102,6 +1102,10 @@ namespace XNAServerClient
                 platform_remote.Position += (remotePlatformVel * new Vector2(-1, -1));
         }
 
+        public void Prediction()
+        { 
+        
+        }
         #endregion
 
         /************************************/
