@@ -81,7 +81,10 @@ namespace XNAServerClient
         //then move to targetPositionX
         float targetWrongX;
         bool moveComPlatformWrong;
-
+        //sometimes com platform needs to wait
+        //for a short time than move to right position
+        //so it can miss the ball
+        bool noWait;
         #endregion
 
         #region XNA functions
@@ -135,6 +138,7 @@ namespace XNAServerClient
             level = Diffculty.Hard;
             targetWrongX = 0f;
             moveComPlatformWrong = false;
+            noWait = true;
         }
 
         public override void UnloadContent()
@@ -404,10 +408,23 @@ namespace XNAServerClient
                             if (num < 6)
                                 MoveComPlatform(targetWrongX, 2);
                             else
+                            {
                                 //go to right position
                                 moveComPlatformWrong = false;
+                                noWait = true;
+                            }
                         }
-                        else if (!moveComPlatformWrong)
+                        else if (!moveComPlatformWrong && !noWait)
+                        { 
+                            //platform is already at left or right window edge
+                            //but if we move back now, we still can catch the ball
+                            //for targetWrongX is outside of screen
+                            //thus we wait, keep checking ball position 
+                            //and remaining distance between ball.x and right pos
+                            //set noWait = true 
+                            AICheckWaiting();
+                        }
+                        else if (!moveComPlatformWrong && noWait)
                         {
                             MoveComPlatform(targetPositionX, 1);
                         }
@@ -779,16 +796,16 @@ namespace XNAServerClient
         private void MoveComPlatform(float target, int flag)
         {
             //we are at right position, stop moving
-            if (target >= platform_com.Position.X + platform_com.Dimension.X / 5 * 2 && target <= platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
+            if (target >= platform_com.Position.X + platform_com.Dimension.X && target <= platform_com.Position.X + platform_com.Dimension.X)
             {
                 if (flag == 1)
                     movePlatformCom = false;
                 else if (flag == 2)
                     moveComPlatformWrong = false;
             }
-            else if (target < platform_com.Position.X + platform_com.Dimension.X / 5 * 2)
+            else if (target < platform_com.Position.X + platform_com.Dimension.X)
                 platform_com.Position = new Vector2(platform_com.Position.X - platform_com.MoveSpeed, platform_com.Position.Y);
-            else if (target > platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
+            else if (target > platform_com.Position.X + platform_com.Dimension.X)
                 platform_com.Position = new Vector2(platform_com.Position.X + platform_com.MoveSpeed, platform_com.Position.Y);
         }
 
@@ -849,13 +866,31 @@ namespace XNAServerClient
                 //check if the target position is outside of screen
                 if (ball.Position.X - targetWrongDistance < 0)
                 { 
-                
+                    //we can simply set wrong position to 0
+                    //check how many updates before collision
+                    //and distance to right position
+                    //in every Update()
+                    //a little bit rigid
+
+                    //cannot just use MoveComPlatform(target, flag)
+                    //because it set moveComPlatformWrong to flase when at target
+                    //then in Update() platform will move to right position
+
+                    //unfortunately this method only called when collision happens
+                    //we need to monitor remaining distance from ball to platform
+                    //so that we know how long to wait at window edge
+                    //flag up noWait
+                    //in Update() check this flag
+                    //set noWait to false to make platform wait and check 
+                    noWait = false;
                 }
                 else
                 { 
                     //we can just move it
                     targetWrongX = ball.Position.X - targetWrongDistance;
                     moveComPlatformWrong = true;
+                    //we don't need to put platform to wait
+                    noWait = true;
                 }
             }
             else if (targetPositionX < ball.Position.X)
@@ -866,6 +901,16 @@ namespace XNAServerClient
             }
 
             
+        }
+
+        //sometimes targetWrongX is outside of screnn
+        //so we need to make platform wait at position 0 or screenWidth-platformWidth
+        //this method is called when platform is at window edge and need to wait
+        //keeping check ball position, calc remaing updates 
+        //move platform when it is too late to catch the ball
+        private void AICheckWaiting()
+        { 
+        
         }
         #endregion
 
