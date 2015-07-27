@@ -377,6 +377,14 @@ namespace XNAServerClient
             //hard: just move it to right position
             if (movePlatformCom)
             {
+                //if all random results do 
+                //MoveComPlatform(targetWrongX, 2);
+                //then miss the ball
+                //which is P^n
+                Random rnd = new Random();
+                //get a number between 1 to 10
+                int num = rnd.Next(1, 11);
+
                 switch (level)
                 {
                     case Diffculty.ExtremeHard:     
@@ -393,19 +401,11 @@ namespace XNAServerClient
                             //while it was on its way to wrong position
                             //and still catches the ball
 
-                            //if all random results do 
-                            //MoveComPlatform(targetWrongX, 2);
-                            //then miss the ball
-                            //which is P^n
-                            Random rnd = new Random();
-                            //get a number between 1 to 10
-                            int num = rnd.Next(1, 11);
-
                             //this if condition controls 
                             //how often AI can catches the ball
                             //change it as you want
                             //num < 6 is 50%
-                            if (num < 9)
+                            if (num < 9 || rounds > 9)
                                 MoveComPlatform(targetWrongX, 2);
                             else
                             {
@@ -828,7 +828,8 @@ namespace XNAServerClient
         private void CalcComWrongPosition()
         {
             //this is the distance we need to move to the right position
-            float trueDistance = Math.Abs(targetPositionX - platform_com.Position.X);
+            float trueDistance = Math.Abs(targetPositionX - platform_com.Position.X 
+                - platform_com.Dimension.X / 2);
             
             //figure out how many updates are there before collision
             /*
@@ -854,8 +855,9 @@ namespace XNAServerClient
             //ceiling it to 6 which is not much different before we cast it
             //then platform may still be able to collided with ball
             //under some extreme conditions (CPU schedualing, threading and so on)
-            //let's make it: (updates + 1) * 10 - trueDistance
-            float targetWrongDistance = ((updates + 1) * 10 - trueDistance) / 2; 
+            //let's make it: (updates + 2) * 10 - trueDistance
+            //updates is havled, therefore + 2
+            float targetWrongDistance = ((updates + 2) * 10 - trueDistance) / 2; 
 
             //work out which direction we move
             //just in case, give it >=, 1 at 580 possibility
@@ -949,10 +951,13 @@ namespace XNAServerClient
 
             //shoule be 45 in if condition
             //to be safe, give it one more update interval (speed 10)
-            float moveToRightDistance = Math.Abs(targetPositionX - platform_com.Position.X);
-            if (moveToRightDistance > ball.Position.Y - 55)
+            float moveToRightDistance = Math.Abs(targetPositionX - platform_com.Position.X
+                - platform_com.Dimension.X/2);
+            if (moveToRightDistance > ball.Position.Y - 45)
                 waitAtWindowEdge = false;
         }
+        
+        
         #endregion
 
         #endregion

@@ -117,7 +117,7 @@ namespace XNAServerClient
             if (position.X <= 0)
                 velocity = new Vector2(velocity.X * -1, velocity.Y);
             else if (position.X + ballImage.Width >= ScreenManager.Instance.Dimensions.X)
-                velocity = new Vector2(velocity.X * -1, velocity.Y);
+                velocity = new Vector2(Math.Abs(velocity.X) * -1, velocity.Y);
             if (position.Y <= 0)
                 velocity = new Vector2(velocity.X, velocity.Y * -1);
             else if (position.Y + ballImage.Height >= ScreenManager.Instance.Dimensions.Y)
