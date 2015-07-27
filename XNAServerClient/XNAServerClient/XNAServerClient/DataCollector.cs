@@ -84,7 +84,7 @@ namespace XNAServerClient
         //sometimes com platform needs to wait
         //for a short time than move to right position
         //so it can miss the ball
-        bool noWait;
+        bool waitAtWindowEdge;
         #endregion
 
         #region XNA functions
@@ -135,10 +135,10 @@ namespace XNAServerClient
             predictList_4th = new ArrayList();
             windowEdge = new Vector2(0, 0);
 
-            level = Diffculty.Hard;
+            level = Diffculty.ExtremeHard;
             targetWrongX = 0f;
             moveComPlatformWrong = false;
-            noWait = true;
+            waitAtWindowEdge = false;
         }
 
         public override void UnloadContent()
@@ -405,16 +405,16 @@ namespace XNAServerClient
                             //how often AI can catches the ball
                             //change it as you want
                             //num < 6 is 50%
-                            if (num < 6)
+                            if (num < 9)
                                 MoveComPlatform(targetWrongX, 2);
                             else
                             {
                                 //go to right position
                                 moveComPlatformWrong = false;
-                                noWait = true;
+                                waitAtWindowEdge = false;
                             }
                         }
-                        else if (!moveComPlatformWrong && !noWait)
+                        else if (!moveComPlatformWrong && waitAtWindowEdge)
                         { 
                             //platform is already at left or right window edge
                             //but if we move back now, we still can catch the ball
@@ -424,7 +424,7 @@ namespace XNAServerClient
                             //set noWait = true 
                             AICheckWaiting();
                         }
-                        else if (!moveComPlatformWrong && noWait)
+                        else if (!moveComPlatformWrong && !waitAtWindowEdge)
                         {
                             MoveComPlatform(targetPositionX, 1);
                         }
@@ -884,7 +884,7 @@ namespace XNAServerClient
                     //flag up noWait
                     //in Update() check this flag
                     //set noWait to false to make platform wait and check 
-                    noWait = false;
+                    waitAtWindowEdge = true;
                     //see MoveComPlatform()
                     //that method keep moving platform 
                     //until target position is between 
@@ -899,14 +899,29 @@ namespace XNAServerClient
                     targetWrongX = platform_com.Position.X - targetWrongDistance;
                     moveComPlatformWrong = true;
                     //we don't need to put platform to wait
-                    noWait = true;
+                    waitAtWindowEdge = false;
                 }
             }
             else if (targetPositionX < platform_com.Position.X)
             { 
+                //see above if block for detailed explainations
                 //move to right (wrong direction)
 
                 //check if the target position is outside of screen
+                if (platform_com.Position.X + targetWrongDistance >= 
+                    ScreenManager.Instance.Dimensions.X - platform_com.Dimension.X / 2)
+                {
+                    targetWrongX = ScreenManager.Instance.Dimensions.X
+                        - platform_com.Dimension.X / 2;
+                    moveComPlatformWrong = true;
+                    waitAtWindowEdge = true;
+                }
+                else 
+                {
+                    targetWrongX = platform_com.Position.X + targetWrongDistance;
+                    moveComPlatformWrong = true;
+                    waitAtWindowEdge = false;
+                }
             }
 
             
@@ -933,10 +948,10 @@ namespace XNAServerClient
             //float distance = updates * 10;
 
             //shoule be 45 in if condition
-            //to be safe, give it one more update interval
+            //to be safe, give it one more update interval (speed 10)
             float moveToRightDistance = Math.Abs(targetPositionX - platform_com.Position.X);
             if (moveToRightDistance > ball.Position.Y - 55)
-                noWait = true;
+                waitAtWindowEdge = false;
         }
         #endregion
 
