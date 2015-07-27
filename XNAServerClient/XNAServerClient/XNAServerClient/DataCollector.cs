@@ -844,7 +844,7 @@ namespace XNAServerClient
              */
             int updates = (int)Math.Ceiling((ball.Position.Y - 45) / 10);
             //so before collision, if we keeping moving
-            //we at least need to move 
+            //we then at least need to move a distance of 
             //updates * 10 - trueDistance (platform speed is 10f)
             //therefore the wrong position we need to move to is 
             //half of that distance: (updated * 10 - trueDistance) / 2
@@ -912,15 +912,31 @@ namespace XNAServerClient
             
         }
 
-        //sometimes targetWrongX is outside of screnn
+        //sometimes targetWrongX is outside of screen
         //so we need to make platform wait at position 0 or screenWidth-platformWidth
         //this method is called when at window edge 
         //keep check remaining updates before collision
         //set noWait to true when it is too late to catch the ball
         private void AICheckWaiting()
-        { 
-        
+        {
+            //platform_com position is at 20, and its height is 25
+            //therefore lower side is 45
+            //we calculates ball's Y and 45 
+            //ball moves 10 per updates on vertical
+            //use that to see how long we can move the platform
+            //platform movespeed is also 10f
+            
+            //code should look like
+            //remaining updates
+            //float updates = (ball.Position.Y - 45) / 10;
+            //distance platform can move
+            //float distance = updates * 10;
 
+            //shoule be 45 in if condition
+            //to be safe, give it one more update interval
+            float moveToRightDistance = Math.Abs(targetPositionX - platform_com.Position.X);
+            if (moveToRightDistance > ball.Position.Y - 55)
+                noWait = true;
         }
         #endregion
 
