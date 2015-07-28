@@ -88,7 +88,7 @@ namespace XNAServerClient
         //variable below is a timer controls 
         //how many update platform com waits
         //before goes to right position
-        int waitWindowEdge = 0;
+        int moveWrongTimer = 0;
         //how many rouns com is allowed to play
         int playRounds = 0;
         Random rnd;
@@ -309,6 +309,11 @@ namespace XNAServerClient
                     //last time ball reached window edge/border
                     windowEdge = new Vector2(0, 0);
                     platformHasMoved = false;
+                    //nsole.WriteLine("Collision: " + ball.Position.X);
+
+                    //reset AI
+                    movePlatformCom = false;
+                    moveComPlatformWrong = false;
 
                     //if ball center is higher than platform, ball's velocity Y is negative 
                     //if ball center is lower than platform, ball's velocity Y is positive
@@ -376,20 +381,20 @@ namespace XNAServerClient
             //extrem hard: move to wrong direction then move back
             //very hard: move platform when it is too late
             //hard: just move it to right position
-            if (movePlatformCom)
+            if (movePlatformCom && !end)
             {
                 //if all random results do 
                 //MoveComPlatform(targetWrongX, 2);
                 //then miss the ball
                 //which is P^n
-                //get a number between 1 to 10
-                int num = rnd.Next(1, 11);
+                //get a number between 1 to 100
+                int num = rnd.Next(1, 101);
                 switch (level)
                 {
                     case Diffculty.ExtremeHard:     
                         //move to the wrong position first
                         //then move to right position
-                        if (moveComPlatformWrong || waitWindowEdge > 0)
+                        if (moveComPlatformWrong)
                         {
                             //Console.WriteLine(rounds + "," + playRounds);
                             //if we just let it do 
@@ -404,20 +409,28 @@ namespace XNAServerClient
                             //this if condition controls 
                             //how often AI can catches the ball
                             //change it as you want
-                            //num < 6 is 50%
-                            if (num < 8 || rounds > playRounds)
+                            //num < 51 is 50%
+                            if (num < 95)
                             {
                                 MoveComPlatform(targetWrongX, 2);
-                                waitWindowEdge--;
+                                moveWrongTimer--;
                             }               
                             else
                             {
                                 //go to right position
                                 moveComPlatformWrong = false;
-                                waitWindowEdge = 0;
+                                moveWrongTimer = 0;
                             }
                         }
-                        else if (!moveComPlatformWrong && waitWindowEdge <= 0)
+                        else if (!moveComPlatformWrong && moveWrongTimer > 0)
+                        { 
+                            //do nothing
+                            //we are at window edge
+                            //but we still need to wait for timer counts down
+                            //to miss the ball
+                            moveWrongTimer--;
+                        }
+                        else if (!moveComPlatformWrong && moveWrongTimer <= 0)
                         {
                             MoveComPlatform(targetPositionX, 1);
                         }
@@ -792,11 +805,12 @@ namespace XNAServerClient
             if (target >= platform_com.Position.X + platform_com.Dimension.X / 5 * 2 && target <= platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
             {
                 if (flag == 1)
-                    movePlatformCom = false;
-                else if (flag == 2)
                 {
-                    moveComPlatformWrong = false;
+                    movePlatformCom = false;
                 }
+                else if (flag == 2)
+                    moveComPlatformWrong = false;            
+                    
             }
             else if (target < platform_com.Position.X + platform_com.Dimension.X / 5 * 2)
                 platform_com.Position = new Vector2(platform_com.Position.X - platform_com.MoveSpeed, platform_com.Position.Y);
@@ -822,10 +836,16 @@ namespace XNAServerClient
         //so..let's get this done
         private void CalcComWrongPosition()
         {
-            //this is the distance we need to move to the right position
-            float trueDistance = Math.Abs(targetPositionX - platform_com.Position.X 
-                - platform_com.Dimension.X / 2);
-            
+            //work out how much distance we need to move
+            //from current position to collision position
+            float trueDistance = 0;
+            if (targetPositionX > platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
+                trueDistance = targetPositionX - platform_com.Position.X - platform_com.Dimension.X / 5 * 3;
+            else if (targetPositionX < platform_com.Position.X + platform_com.Dimension.X / 5 * 2)
+                trueDistance = platform_com.Position.X + platform_com.Dimension.X / 5 * 2 - targetPositionX;
+            //convert distance to how many updates 
+            //platform move speed is 10f
+            int tmp = (int)Math.Ceiling(trueDistance / 10);
             //figure out how many updates are there before collision
             /*
              * MSDN exmaple of Math.Ceiling(double)
@@ -838,41 +858,38 @@ namespace XNAServerClient
              *  
              * why it returns a double? hmm..
              */
-            //work out timer that how many updates 
-            //before ball reaches collision point 
-            waitWindowEdge = (int)Math.Ceiling((ball.Position.Y - 45) / 10) / 2;
-            //so before collision, if we keeping moving
-            //we then at least need to move a distance of 
-            //updates * 10 - trueDistance (platform speed is 10f)
-            //therefore the wrong position we need to move to is 
-            //half of that distance: (updated * 10 - trueDistance) / 2
-            //move to wrong pos + move back to where we are now + trueDistance
-            //
-            //varibles was casted, in case there was like 5.99, 5.98 
-            //ceiling it to 6 which is not much different before we cast it
-            //then platform may still be able to collided with ball
-            //under some extreme conditions (CPU schedualing, threading and so on)
-            //let's make it: (updates + 2) * 10 - trueDistance
-            //updates is havled, therefore + 2
-            //float targetWrongDistance = ((updates + 2) * 10 - trueDistance) / 2; 
+            //work out how many updates before collision
+            moveWrongTimer = (int)Math.Ceiling((ball.Position.Y - 45) / 10);
+            moveWrongTimer -= tmp;
+            //havlve remaining timer, 
+            //that is the distance we are going to move
+            //to wrong direction
+            moveWrongTimer /= 2;
+            //see collision detection
+            //CD is not well writen, we need extra 190 distance
+            //to ensure platform will miss the ball
+            moveWrongTimer += 19;
 
-            //work out which direction we move
-            //just in case, give it >=, 1 at 580 possibility
-            if (targetPositionX >= platform_com.Position.X)
-            {
-                //move to left (wrong direction)
-
-                targetWrongX = platform_com.Position.X - waitWindowEdge * 10;
-
-            }
-            else if (targetPositionX < platform_com.Position.X)
+            //move to a wrong position
+            if (targetPositionX > platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
             { 
-                //see above if block for detailed explainations
-                //move to right (wrong direction)
-
-                targetWrongX = platform_com.Position.X + waitWindowEdge * 10;
+                //move to left (wrong direction)
+                targetWrongX = platform_com.Position.X + platform_com.Dimension.X / 5 * 2
+                    - moveWrongTimer * 10;
+                if (targetWrongX < platform_com.Dimension.X / 5 * 2)
+                    targetWrongX = platform_com.Dimension.X / 5 * 2;
             }
-            //tell Update() moves platform to wrong position
+            else if (targetPositionX < platform_com.Position.X + platform_com.Dimension.X / 5 * 2)
+            { 
+                //move to right (wrong direction)
+                targetWrongX = platform_com.Position.X + platform_com.Dimension.X / 5 * 3
+                    + moveWrongTimer * 10;
+                if (targetWrongX > ScreenManager.Instance.Dimensions.X
+                    - platform_com.Dimension.X / 5 * 2)
+                    targetWrongX = ScreenManager.Instance.Dimensions.X
+                        - platform_com.Dimension.X / 5 * 2;
+            }
+
             moveComPlatformWrong = true;
         }
 
