@@ -149,7 +149,7 @@ namespace XNAServerClient
             rnd = new Random();
             //this variable below controls how long
             //you want AI plays
-            playRounds = rnd.Next(10, 19);
+            playRounds = rnd.Next(20, 29);
 
         }
 
@@ -314,6 +314,7 @@ namespace XNAServerClient
                     //reset AI
                     movePlatformCom = false;
                     moveComPlatformWrong = false;
+                    Console.WriteLine("Ball: " + (ball.Position.X + ball.ImageWidth/2) + " Platform: " + platform_com.Position.X + " : " + (platform_com.Position.X + platform_com.Dimension.X));
 
                     //if ball center is higher than platform, ball's velocity Y is negative 
                     //if ball center is lower than platform, ball's velocity Y is positive
@@ -410,6 +411,7 @@ namespace XNAServerClient
                             //how often AI can catches the ball
                             //change it as you want
                             //num < 51 is 50%
+                            
                             if (num < 95)
                             {
                                 MoveComPlatform(targetWrongX, 2);
@@ -429,6 +431,8 @@ namespace XNAServerClient
                             //but we still need to wait for timer counts down
                             //to miss the ball
                             moveWrongTimer--;
+                            if (moveWrongTimer == 0)
+                                Console.WriteLine("Loser!");
                         }
                         else if (!moveComPlatformWrong && moveWrongTimer <= 0)
                         {
@@ -866,9 +870,16 @@ namespace XNAServerClient
             //to wrong direction
             moveWrongTimer /= 2;
             //see collision detection
-            //CD is not well writen, we need extra 190 distance
+            //i believe due to 
+            //CD is not well written, we need extra 190 distance
             //to ensure platform will miss the ball
-            moveWrongTimer += 19;
+            //but it appears this offset has 
+            //impact on AI
+            //which causes it catches ball for few rounds
+            //and often misses ball at round 2, 7 and 11
+
+            //temporal fix
+            moveWrongTimer += rnd.Next(17,20);
 
             //move to a wrong position
             if (targetPositionX > platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
