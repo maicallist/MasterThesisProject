@@ -92,6 +92,25 @@ namespace XNAServerClient
         //how many rouns com is allowed to play
         int playRounds = 0;
         Random rnd;
+
+        //very hard AI
+        struct statePack 
+        {
+            Vector2 ballVel;
+            Vector2 ballPos;
+            Vector2 platPos;
+            Vector2 windEdg;
+
+            public statePack(Vector2 vel, Vector2 posb, Vector2 posp, Vector2 wdwe)
+            {
+                ballVel = vel;
+                ballPos = posb;
+                platPos = posp;
+                windEdg = wdwe;
+            }
+        }
+        statePack currentState;
+        Vector2 windowEdgeCom;
         #endregion
 
         #region XNA functions
@@ -142,7 +161,7 @@ namespace XNAServerClient
             predictList_4th = new ArrayList();
             windowEdge = new Vector2(0, 0);
 
-            level = Diffculty.ExtremeHard;
+            level = Diffculty.VeryHard;
             targetWrongX = 0f;
             moveComPlatformWrong = false;
             
@@ -151,6 +170,10 @@ namespace XNAServerClient
             //you want AI plays
             playRounds = rnd.Next(20, 29);
 
+            //init very hard AI pack
+            currentState = new statePack(Vector2.Zero, 
+                Vector2.Zero, Vector2.Zero, Vector2.Zero);
+            windowEdgeCom = Vector2.Zero;
         }
 
         public override void UnloadContent()
@@ -401,7 +424,7 @@ namespace XNAServerClient
                             //if we just let it do 
                             //MoveComPlatform(targetWrongX, 2);
                             //AI definately gonna miss the ball
-                            //so we can give it a random
+                            //so we can give it a random number
                             //directly set !moveComPlatformWrong
                             //then it moves back to right position
                             //while it was on its way to wrong position
@@ -441,8 +464,7 @@ namespace XNAServerClient
 
                         break;
                     case Diffculty.VeryHard:
-                        
-
+                       
                         break;
                     case Diffculty.Hard:
                         MoveComPlatform(targetPositionX, 1);
@@ -463,9 +485,9 @@ namespace XNAServerClient
                     + "\tPlaXCoor\t" + platform_player.Position.X
                     + "\tPlatVel\t" + platform_player.Velocity.X + "," + platform_player.Velocity.Y);
                 if (ball.Velocity.Y > 0)
-                {
                     windowEdge = ball.Position;
-                }
+                else
+                    windowEdgeCom = ball.Position;
             }
 
             base.Update(gameTime);
@@ -838,6 +860,18 @@ namespace XNAServerClient
         //that position may be outside of our screen
 
         //so..let's get this done
+
+        //this method is called in extreme hard mode
+        //every time when com platform receives movePlatformCom flag
+        //AI first calculates a worng position in wrong direction
+        //if com platform successfully reaches this wrong position
+        //then it will miss ball on its way back to right collision position
+
+        //during moving to wrong position
+        //in every update we generate a random number
+        //if the number is in range, we keep moving
+        //otherwise we abort moving to wrong position
+        //and start moving to the right collision position
         private void CalcComWrongPosition()
         {
             //work out how much distance we need to move
@@ -978,6 +1012,7 @@ namespace XNAServerClient
             }
         }
 
+        /* player prediction  */
         public double predict_disToPlatform(double dis) 
         {
             //distance ball to platform vs ball y postion
@@ -1048,6 +1083,63 @@ namespace XNAServerClient
             return y;
         }
 
+
+        private void doPredictionComVeryHard()
+        {
+            //distance between ball and platform com
+            double db = Math.Pow(ball.Position.X - platform_com.Position.X, 2)
+                    + Math.Pow(ball.Position.Y - platform_com.Position.Y, 2);
+            db = Math.Sqrt(db);
+
+            currentState = new statePack(ball.Velocity, ball.Position,
+                platform_com.Position, windowEdgeCom);
+            currentState = reversePosition(currentState);
+            
+
+            /*
+             * fourh param platfomr x position 
+             */
+            db = predict_disToPlatform(db, (int)ball.Velocity.X, (int)ball.Position.X, (int)platform_player.Position.X);
+
+            if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPrediction_3)
+            {
+                show_prediction_3rd = db;
+                hasPrediction_3 = true;
+            }
+
+            /*
+             * if ball hit window edge once when going down
+             */
+            if (windowEdge.Y != 0)
+                db = predict_disToPlatform(db, (int)ball.Velocity.X,
+                    (int)ball.Position.X, (int)platform_player.Position.X, (int)windowEdge.X);
+
+            if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPrediction_4)
+            {
+                show_prediction_4th = db;
+                hasPrediction_4 = true;
+            }
+        }
+
+        //for very hard AI
+        //we use player profile
+        //which our prediction model is based on 
+        //single player mode which player is at bottom
+        //thus, we need to reverse position
+        //so prediction can be used for 
+        //com platform (at top of screen)
+        private statePack reversePosition(statePack state)
+        { 
+            // 45 and 775 
+            //platform vertical coordinate 
+            //top lower side and bottom upper side
+
+            // 0 to 580 screen width
+
+
+
+            return state;
+        }
         #endregion
     }
 }
