@@ -94,6 +94,9 @@ namespace XNAServerClient
         Random rnd;
 
         //very hard AI
+        //it has get and set 
+        //although struct members are not meant to be changed
+        //microsoft consistently violates this rule anyway
         struct statePack 
         {
             Vector2 ballVel;
@@ -107,6 +110,30 @@ namespace XNAServerClient
                 ballPos = posb;
                 platPos = posp;
                 windEdg = wdwe;
+            }
+
+            public Vector2 bVel
+            {
+                get { return ballVel; }
+                set { ballVel = value; }
+            }
+
+            public Vector2 bPos
+            {
+                get { return ballPos; }
+                set { ballPos = value; }
+            }
+
+            public Vector2 pPos
+            {
+                get { return platPos; }
+                set { platPos = value; }
+            }
+
+            public Vector2 wEdg
+            {
+                get { return windEdg; }
+                set { windEdg = value; }
             }
         }
         statePack currentState;
@@ -161,7 +188,7 @@ namespace XNAServerClient
             predictList_4th = new ArrayList();
             windowEdge = new Vector2(0, 0);
 
-            level = Diffculty.VeryHard;
+            level = Diffculty.Hard;
             targetWrongX = 0f;
             moveComPlatformWrong = false;
             
@@ -1078,7 +1105,7 @@ namespace XNAServerClient
             double y;
             y = Math.Round(706.5644181 + -0.9503573 * dis
                 + 0.0497304 * posx + 0.1652617 * platx
-                + 0.0655089 * windowEdge.X, 3);
+                + 0.0655089 * windowEdge.Y, 3);
 
             return y;
         }
@@ -1099,7 +1126,7 @@ namespace XNAServerClient
             /*
              * fourh param platfomr x position 
              */
-            db = predict_disToPlatform(db, (int)ball.Velocity.X, (int)ball.Position.X, (int)platform_player.Position.X);
+            db = predict_disToPlatform(db, (int)currentState.bVel.X, (int)currentState.bPos.X, (int)currentState.pPos.X);
 
             if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPrediction_3)
             {
@@ -1110,9 +1137,9 @@ namespace XNAServerClient
             /*
              * if ball hit window edge once when going down
              */
-            if (windowEdge.Y != 0)
-                db = predict_disToPlatform(db, (int)ball.Velocity.X,
-                    (int)ball.Position.X, (int)platform_player.Position.X, (int)windowEdge.X);
+            if (windowEdgeCom.Y != 0)
+                db = predict_disToPlatform(db, (int)currentState.bVel.X,
+                    (int)ball.Position.X, (int)platform_player.Position.X, (int)currentState.wEdg.Y);
 
             if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPrediction_4)
             {
@@ -1130,13 +1157,13 @@ namespace XNAServerClient
         //com platform (at top of screen)
         private statePack reversePosition(statePack state)
         { 
-            // 45 and 775 
-            //platform vertical coordinate 
-            //top lower side and bottom upper side
-
             // 0 to 580 screen width
-
-
+            float screenWidth = ScreenManager.Instance.Dimensions.X;
+            float screenHeight = ScreenManager.Instance.Dimensions.Y;
+            state.bVel = new Vector2(state.bVel.X * -1, state.bVel.Y * -1);
+            state.bPos = new Vector2(screenWidth - state.bPos.X, screenHeight - state.bPos.Y);
+            state.pPos = new Vector2(screenWidth - state.pPos.X, screenHeight - state.pPos.Y);
+            state.wEdg = new Vector2(screenWidth - state.wEdg.X, screenHeight - state.wEdg.Y);
 
             return state;
         }
