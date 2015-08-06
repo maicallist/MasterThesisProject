@@ -90,7 +90,7 @@ namespace XNAServerClient
         //before goes to right position
         int moveWrongTimer = 0;
         //how many rouns com is allowed to play
-        int playRounds = 0;
+        //int playRounds = 0;
         Random rnd;
 
         //very hard AI
@@ -138,6 +138,13 @@ namespace XNAServerClient
         }
         statePack currentState;
         Vector2 windowEdgeCom;
+        //very hard
+        //control platform com move to collosipn point
+        bool veryhardMove = false;
+        //control platform com move to center
+        //when ball flying away from platform
+        bool veryhardMoveToCenter = false;
+        int veryhardMoveCenterOffset = 0;
         #endregion
 
         #region XNA functions
@@ -188,14 +195,11 @@ namespace XNAServerClient
             predictList_4th = new ArrayList();
             windowEdge = new Vector2(0, 0);
 
-            level = Diffculty.Hard;
+            level = Diffculty.VeryHard;
             targetWrongX = 0f;
             moveComPlatformWrong = false;
             
             rnd = new Random();
-            //this variable below controls how long
-            //you want AI plays
-            playRounds = rnd.Next(20, 29);
 
             //init very hard AI pack
             currentState = new statePack(Vector2.Zero, 
@@ -271,7 +275,6 @@ namespace XNAServerClient
                 if (UpdateCollision(ballRect, ballColor, platformRect_player, platformColor_player))
                 {
                     accelCounter++;
-
                     //when collade, collect prediction and actual data
                     //predictList.Add("#########");
                     predictList_1st.Add("prediction\t" + show_prediction_1st + "\treal\t" + move_y);
@@ -364,7 +367,10 @@ namespace XNAServerClient
                     //reset AI
                     movePlatformCom = false;
                     moveComPlatformWrong = false;
-                    Console.WriteLine("Ball: " + (ball.Position.X + ball.ImageWidth/2) + " Platform: " + platform_com.Position.X + " : " + (platform_com.Position.X + platform_com.Dimension.X));
+                    //Console.WriteLine("Ball: " + (ball.Position.X + ball.ImageWidth/2) + " Platform: " + platform_com.Position.X + " : " + (platform_com.Position.X + platform_com.Dimension.X));
+
+                    //veryhard AI we need to move platform back to center of the screen
+                    veryhardMoveToCenter = true;
 
                     //if ball center is higher than platform, ball's velocity Y is negative 
                     //if ball center is lower than platform, ball's velocity Y is positive
@@ -488,16 +494,21 @@ namespace XNAServerClient
                         {
                             MoveComPlatform(targetPositionX, 1);
                         }
-
                         break;
                     case Diffculty.VeryHard:
-                       
+                        doPredictionComVeryHard();
+                        if (veryhardMove)
+                            MoveComPlatform(targetPositionX, 3);
                         break;
                     case Diffculty.Hard:
                         MoveComPlatform(targetPositionX, 1);
-
                         break;
                 }
+            }
+
+            if (veryhardMoveToCenter && !end)
+            {
+                MoveComPlatform(ScreenManager.Instance.Dimensions.X/2, 4);
             }
 
             //prediction record
@@ -857,13 +868,21 @@ namespace XNAServerClient
             //we are at right position, stop moving
             if (target >= platform_com.Position.X + platform_com.Dimension.X / 5 * 2 && target <= platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
             {
-                if (flag == 1)
+                switch(flag)
                 {
-                    movePlatformCom = false;
-                }
-                else if (flag == 2)
-                    moveComPlatformWrong = false;            
-                    
+                    case 1: 
+                        movePlatformCom = false;
+                        break;
+                    case 2:
+                        moveComPlatformWrong = false;
+                        break;
+                    case 3:
+                        veryhardMove = false;
+                        break;
+                    case 4:
+                        veryhardMoveToCenter = false;
+                        break;
+                }        
             }
             else if (target < platform_com.Position.X + platform_com.Dimension.X / 5 * 2)
                 platform_com.Position = new Vector2(platform_com.Position.X - platform_com.MoveSpeed, platform_com.Position.Y);
@@ -1128,24 +1147,21 @@ namespace XNAServerClient
              */
             db = predict_disToPlatform(db, (int)currentState.bVel.X, (int)currentState.bPos.X, (int)currentState.pPos.X);
 
-            if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPrediction_3)
-            {
-                show_prediction_3rd = db;
-                hasPrediction_3 = true;
-            }
+            if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3)
+                veryhardMove = true;
 
             /*
              * if ball hit window edge once when going down
              */
             if (windowEdgeCom.Y != 0)
                 db = predict_disToPlatform(db, (int)currentState.bVel.X,
-                    (int)ball.Position.X, (int)platform_player.Position.X, (int)currentState.wEdg.Y);
+                    (int)ball.Position.X, (int)platform_player.Position.X, (int)currentState.wEdg.X);
 
-            if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPrediction_4)
-            {
-                show_prediction_4th = db;
-                hasPrediction_4 = true;
-            }
+            if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3)
+                veryhardMove = true;
+            if (currentState.bPos.Y > 550)
+                veryhardMove = true;
+
         }
 
         //for very hard AI
@@ -1156,7 +1172,7 @@ namespace XNAServerClient
         //so prediction can be used for 
         //com platform (at top of screen)
         private statePack reversePosition(statePack state)
-        { 
+        {
             // 0 to 580 screen width
             float screenWidth = ScreenManager.Instance.Dimensions.X;
             float screenHeight = ScreenManager.Instance.Dimensions.Y;
