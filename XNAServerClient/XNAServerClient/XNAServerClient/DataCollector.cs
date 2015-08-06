@@ -144,7 +144,8 @@ namespace XNAServerClient
         //control platform com move to center
         //when ball flying away from platform
         bool veryhardMoveToCenter = false;
-        int veryhardMoveCenterOffset = 0;
+        bool checkMoveCenter = false;
+
         #endregion
 
         #region XNA functions
@@ -275,6 +276,11 @@ namespace XNAServerClient
                 if (UpdateCollision(ballRect, ballColor, platformRect_player, platformColor_player))
                 {
                     accelCounter++;
+                    //reset AI move center flag
+                    //this should be set false in moveComPlatform
+                    //just in case
+                    checkMoveCenter = false;
+                    veryhardMoveToCenter = false;
                     //when collade, collect prediction and actual data
                     //predictList.Add("#########");
                     predictList_1st.Add("prediction\t" + show_prediction_1st + "\treal\t" + move_y);
@@ -370,7 +376,13 @@ namespace XNAServerClient
                     //Console.WriteLine("Ball: " + (ball.Position.X + ball.ImageWidth/2) + " Platform: " + platform_com.Position.X + " : " + (platform_com.Position.X + platform_com.Dimension.X));
 
                     //veryhard AI we need to move platform back to center of the screen
-                    veryhardMoveToCenter = true;
+                    //this function will be implemented in a different way
+                    //we pull data out to create a regression that predicts 
+                    //when we move back to center
+                    //therefore, instead of set movecenter true
+                    //we set to check conditions
+                    //veryhardMoveToCenter = true;
+                    checkMoveCenter = true;
 
                     //if ball center is higher than platform, ball's velocity Y is negative 
                     //if ball center is lower than platform, ball's velocity Y is positive
@@ -506,6 +518,16 @@ namespace XNAServerClient
                 }
             }
 
+            //check when we move platoform to center of screen
+            if (checkMoveCenter && !veryhardMoveToCenter)
+            {
+                currentState = new statePack(ball.Velocity, ball.Position,
+                platform_com.Position, windowEdgeCom);
+                //below func can set veryhardMoveToCenter to true
+                //when current state fits our model
+                doPrediction_VeryHardMoveToCenter(currentState);
+            }
+            //go to center
             if (veryhardMoveToCenter && !end)
             {
                 MoveComPlatform(ScreenManager.Instance.Dimensions.X/2, 4);
@@ -881,6 +903,7 @@ namespace XNAServerClient
                         break;
                     case 4:
                         veryhardMoveToCenter = false;
+                        checkMoveCenter = false;
                         break;
                 }        
             }
@@ -1161,7 +1184,6 @@ namespace XNAServerClient
                 veryhardMove = true;
             if (currentState.bPos.Y > 550)
                 veryhardMove = true;
-
         }
 
         //for very hard AI
@@ -1182,6 +1204,26 @@ namespace XNAServerClient
             state.wEdg = new Vector2(screenWidth - state.wEdg.X, screenHeight - state.wEdg.Y);
 
             return state;
+        }
+
+        //we first reverse position for com
+        //and apply our prediction model
+        private void doPrediction_VeryHardMoveToCenter(statePack state)
+        {
+            state = reversePosition(state);
+            //calc distance first
+            double db = Math.Pow(state.bPos.X - state.pPos.X, 2)
+                + Math.Pow(state.bPos.Y - state.pPos.Y, 2);
+            db = Math.Sqrt(db);
+            //calc vel
+            double vel = Math.Pow(state.bVel.X, 2) + Math.Pow(state.bVel.Y, 2);
+            vel = Math.Sqrt(vel);
+
+            db = db * -0.779862391 + vel * 5.494813831 + state.bPos.X * 0.128871623
+                + state.pPos.X * -0.11275278 + 654.4130811;
+
+            if (Math.Abs(db - state.bPos.Y) <= 3 || state.bPos.Y < 300)
+                veryhardMoveToCenter = true;
         }
         #endregion
     }
