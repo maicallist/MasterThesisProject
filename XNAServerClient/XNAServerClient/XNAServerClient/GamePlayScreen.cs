@@ -29,7 +29,6 @@ namespace XNAServerClient
 
         //game state
         bool gameStart;
-        bool gameEnd;
 
         /* 4.0 */
         Color color;
@@ -74,7 +73,7 @@ namespace XNAServerClient
         
 
         //record dead reckoning 
-        bool deadMoving;
+        bool deadMoving = false;
         //store platform moving on host
         ArrayList hostSide;
         ArrayList hostVel;
@@ -94,19 +93,18 @@ namespace XNAServerClient
         //communication latency between
         //client and host
         //local start time
-        static long initLagInMillisec;
-
-        
+        static long initLagInMillisec = 0;
 
         /*******************************************/
-        /*all variables defined below are temproral*/
+        /*all variables defined beliw are temproral*/
         /*******************************************/
 
         #endregion
 
         public override void LoadContent(ContentManager Content, InputManager inputManager)
         {
-            base.LoadContent(Content, inputManager);          
+            base.LoadContent(Content, inputManager);
+            
             //loading assets
             if (font == null)
                 font = content.Load<SpriteFont>("Font1");
@@ -115,14 +113,13 @@ namespace XNAServerClient
             platform_local.LoadContent(Content, inputManager);
             platform_remote = new Platform();
             platform_remote.LoadContent(Content, inputManager);
-            //platform_remote.ControlByPlayer = false;
+            platform_remote.ControlByPlayer = false;
             platform_remote.Position = new Vector2(ScreenManager.Instance.Dimensions.X / 2 - platform_remote.Dimension.X / 2, 20);
 
             ball = new Ball();
             ball.LoadContent(Content, inputManager);
 
             gameStart = false;
-            gameEnd = false;
             localPlatformMoving = false;
 
             /* 4.0 */
@@ -154,9 +151,6 @@ namespace XNAServerClient
 
             timeTag = new ArrayList();
             timeTagInMillisec = new ArrayList();
-
-            deadMoving = false;
-            initLagInMillisec = 0;
         }
 
         public override void UnloadContent()
@@ -185,7 +179,6 @@ namespace XNAServerClient
             inputManager.Update();
             UpdateInput(gameTime);
 
-            //host sends game start singal
             if (!gameStart && session != null && session.SessionState == NetworkSessionState.Lobby)
             {
                 if (inputManager.KeyPressed(Keys.Y) && isServer)
@@ -212,266 +205,254 @@ namespace XNAServerClient
                 }
             }
 
-            //check game end condtion
-            if (gameEnd && (ball.Position.Y < 5 || ball.Position.Y + ball.ImageHeight
-                > ScreenManager.Instance.Dimensions.Y - 5))
+            //update local platform velocity for transmission
+            if (inputManager.KeyUp(Keys.Left) && inputManager.KeyUp(Keys.Right))
             {
-                ball.Velocity = new Vector2(0, 0);
+                if (localPlatformMoving)
+                {
+                    //update some states when stop move
+                    localPlatformMoving = false;
+                    platform_local.Velocity = new Vector2(0, 0);
+                    sendPacket = true;
+                }
+            }
+            else
+            {
+                //platform wasn't moving in last update()
+                //now it starts moving
+                if (!localPlatformMoving)
+                {
+                    //update state
+                    localPlatformMoving = true;
+                    //work out velocity
+                    if (inputManager.KeyDown(Keys.Left) && inputManager.KeyDown(Keys.Right))
+                        platform_local.Velocity = new Vector2(0, 0);
+                    else if (inputManager.KeyDown(Keys.Left) && inputManager.KeyUp(Keys.Right))
+                        platform_local.Velocity = new Vector2(-10, 0);
+                    else if (inputManager.KeyDown(Keys.Right) && inputManager.KeyUp(Keys.Left))
+                        platform_local.Velocity = new Vector2(10, 0);
+                    sendPacket = true;
+                }
             }
 
-
-            //routine state update
-            if (gameStart && !gameEnd)
+            //press p to store dead reckoning data during game
+            if (inputManager.KeyPressed(Keys.P))
             {
-                //press p to store dead reckoning data during game
-                if (inputManager.KeyPressed(Keys.P))
+                //serialize data
+                //output path - file name
+                //see bin/x86/debug/
+                string path;
+                if (isServer)
+                    path = @".\Remote.txt";
+                else
+                    path = @".\Local.txt";
+                
+                //check file existance
+                if (!File.Exists(path))
+                    File.Create(path).Dispose();
+
+                //file exist
+                if (File.Exists(path))
                 {
-                    //serialize data
-                    //output path - file name
-                    //see bin/x86/debug/
-                    string path;
-                    if (isServer)
-                        path = @".\Remote.txt";
-                    else
-                        path = @".\Local.txt";
-
-                    //check file existance
-                    if (!File.Exists(path))
-                        File.Create(path).Dispose();
-
-                    //file exist
-                    if (File.Exists(path))
+                    //append data  
+                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(path, true))
                     {
-                        //append data  
-                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(path, true))
+                        string str;
+
+                        //write in clock sync info
+                        str = "Start\t" + startTime + "\tGlobal\t" + startTimeInt;
+                        if (isServer)
+                            str += "\tInitalLagInMillisecond\t" + initLagInMillisec;
+                        file.WriteLine(str);
+
+                        if (isServer)
                         {
-                            string str;
-
-                            //write in clock sync info
-                            str = "Start\t" + startTime + "\tGlobal\t" + startTimeInt;
-                            if (isServer)
-                                str += "\tInitalLagInMillisecond\t" + initLagInMillisec;
-                            file.WriteLine(str);
-
-                            if (isServer)
+                            for (int i = 0; i < hostSide.Count; i++)
                             {
-                                for (int i = 0; i < hostSide.Count; i++)
-                                {
-                                    str = timeTag[i] + "\t" + hostSide[i] + "\t" + hostVel[i] + "\t" + timeTagInMillisec[i];
-                                    file.WriteLine(str);
-                                }
+                                str = timeTag[i] + "\t" + hostSide[i] + "\t" + hostVel[i] + "\t" + timeTagInMillisec[i];
+                                file.WriteLine(str);
                             }
-                            else
+                        }
+                        else
+                        {
+                            for (int i = 0; i < clientSide.Count; i++)
                             {
-                                for (int i = 0; i < clientSide.Count; i++)
-                                {
-                                    str = timeTag[i] + "\t" + clientSide[i] + "\t" + clientVel[i] + "\t" + timeTagInMillisec[i];
-                                    file.WriteLine(str);
-                                }
+                                str = timeTag[i] + "\t" + clientSide[i] + "\t" + clientVel[i] + "\t" + timeTagInMillisec[i];
+                                file.WriteLine(str);
                             }
                         }
                     }
                 }
+            }
 
+            
 
-                //update local platform velocity for transmission
-                if (inputManager.KeyUp(Keys.Left) && inputManager.KeyUp(Keys.Right))
+            /* check collision with local platform */
+            Rectangle platformRect_local = platform_local.Rectangle;
+            Color[] platformColor_local = platform_local.ColorData;
+            Rectangle ballRect = ball.Rectangle;
+            Color[] ballColor = ball.ColorData;
+
+            //ball collade with plaform_player
+            if (ballRect.Intersects(platformRect_local))
+            {
+                //collision happens, update state to remote side
+                sendPacket = true;
+
+                //check pixel collision
+                if (UpdateCollision(ballRect, ballColor, platformRect_local, platformColor_local))
                 {
-                    if (localPlatformMoving)
+                    //if ball center is higher than platform, ball's velocity Y is negative 
+                    //if ball center is lower than platform, ball's velocity Y is positive
+                    Vector2 ballOrigin = new Vector2(ball.Origin.X + ballRect.X, ball.Origin.Y + ballRect.Y);
+                    Vector2 platformOrigin_local = new Vector2(platform_local.Origin.X + platformRect_local.X, platform_local.Origin.Y + platformRect_local.Y);
+
+                    //platform height is 25, so check -12 to 12 around origin.y
+                    if ((ballOrigin.Y - platformOrigin_local.Y) <= -12)
+                        ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y) * -1);
+                    else if ((ballOrigin.Y - platformOrigin_local.Y) >= 12)
+                        ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y));
+                    else if (Math.Abs(ballOrigin.Y - platformOrigin_local.Y) < 12)
+                        ball.Velocity = new Vector2(ball.Velocity.X * -1, ball.Velocity.Y);
+                }
+            }
+
+
+            /* under not lagging situation */
+            /* this part of code should only work for server */
+            Rectangle platformRect_remote = platform_remote.Rectangle;
+            Color[] platformColor_remote = platform_remote.ColorData;
+            //ball collade with plaform_player
+            if (ballRect.Intersects(platformRect_remote))
+            {
+                //check pixel collision
+                if (UpdateCollision(ballRect, ballColor, platformRect_remote, platformColor_remote))
+                {
+                    //if ball center is higher than platform, ball's velocity Y is negative 
+                    //if ball center is lower than platform, ball's velocity Y is positive
+                    Vector2 ballOrigin = new Vector2(ball.Origin.X + ballRect.X, ball.Origin.Y + ballRect.Y);
+                    Vector2 platformOrigin_remote = new Vector2(platform_remote.Origin.X + platformRect_remote.X, platform_local.Origin.Y + platformRect_remote.Y);
+
+                    //platform height is 25, so check -12 to 12 around origin.y
+                    if ((ballOrigin.Y - platformOrigin_remote.Y) <= -12)
+                        ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y) * -1);
+                    else if ((ballOrigin.Y - platformOrigin_remote.Y) >= 12)
+                        ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y));
+                    else if (Math.Abs(ballOrigin.Y - platformOrigin_remote.Y) < 12)
+                        ball.Velocity = new Vector2(ball.Velocity.X * -1, ball.Velocity.Y);
+                }
+            }
+
+            base.Update(gameTime);
+            ball.Update(gameTime);
+            platform_local.Update(gameTime);
+            //update remote platform
+            if (lagCompen == LagCompensation.DeadReckoning)
+                DeadReckoning();
+            //Console.WriteLine(remotePlatformVel.X);
+            platform_remote.Update(gameTime);
+            
+            //record dead reckoning
+            //we check remote platform in receive packet function (host side)
+            //let's check client side local platform
+            //if platform moves, record it.
+
+            //on host side, we check remote platform (coded in receivePacket())
+            //that's where we get remote platform data
+
+            //on client side, we check local platform so that we can compare the same platform
+            //thus, do it below
+            if (!isServer)
+            {
+                //skip the case that player presses two buttons at the same time
+                //I'm not gonna do that
+                //and this game is not for trail or anyone else
+                if (inputManager.KeyDown(Keys.Left) || inputManager.KeyDown(Keys.Right))
+                {
+                    if (!deadMoving)
                     {
-                        //update some states when stop move
-                        localPlatformMoving = false;
-                        platform_local.Velocity = new Vector2(0, 0);
-                        sendPacket = true;
+                        deadMoving = true;
+                        timeTag.Add(current);
+                        clientSide.Add(ball.Position.Y);
+                        clientVel.Add(ball.Velocity.Y);
+                        timeTagInMillisec.Add(current.TotalMilliseconds);
                     }
                 }
                 else
                 {
-                    //platform wasn't moving in last update()
-                    //now it starts moving
-                    if (!localPlatformMoving)
+                    if (inputManager.KeyUp(Keys.Left) || inputManager.KeyUp(Keys.Right))
                     {
-                        //update state
-                        localPlatformMoving = true;
-                        //work out velocity
-                        if (inputManager.KeyDown(Keys.Left) && inputManager.KeyDown(Keys.Right))
-                            platform_local.Velocity = new Vector2(0, 0);
-                        else if (inputManager.KeyDown(Keys.Left) && inputManager.KeyUp(Keys.Right))
-                            platform_local.Velocity = new Vector2(-10, 0);
-                        else if (inputManager.KeyDown(Keys.Right) && inputManager.KeyUp(Keys.Left))
-                            platform_local.Velocity = new Vector2(10, 0);
-                        sendPacket = true;
+                        deadMoving = false;
                     }
                 }
+            }
 
+            //testing lag below
+            //because we record client local state and host remote state
+            //so here, we only apply lag to client side
 
-                /* check collision with local platform */
-                Rectangle platformRect_local = platform_local.Rectangle;
-                Color[] platformColor_local = platform_local.ColorData;
-                Rectangle ballRect = ball.Rectangle;
-                Color[] ballColor = ball.ColorData;
+            //Quote from MSDN
+            //The latency simulation is applied on the sending machine, 
+            //so if you set this property differently on each machine, 
+            //only outgoing packets will be affected by the local value of the property.
 
-                //ball collade with plaform_player
-                if (ballRect.Intersects(platformRect_local))
+            //Latency introduced through this setting is not included in the RoundtripTime property, 
+            //which always just reports the physical network latency.
+
+            //Packets sent without any ordering guarantee will be given 
+            //a random latency normally distributed around the specified value, 
+            //introducing packet reordering as well as raw latency. 
+            //Packets sent using SendDataOptions.InOrder will be delayed without reordering.
+
+            //we use SendDataOptions.InOrder
+            //see SendPackets()
+            if (session != null && !isServer)
+            {
+                var rnd = new Random();
+                //create a number, 1 <= int <= 1000
+                int randomLag = rnd.Next(1, 1001);
+                //apply lag
+                TimeSpan lagh = new TimeSpan(0, 0, 0, 0, randomLag);
+                session.SimulatedLatency = lagh;
+            }
+
+            if (session != null)
+            {
+                //when we have change on ball or platform, update to remote side
+
+                //generate lag here
+                //mark server lag flag after send 1st l tag
+                //mark server consisCheck after send 2nd l tag
+                
+                //we send packet in following situation
+                //no lag compensation algorithm applied
+                //collision with platform, local platform oriented
+                //platform state change, local oriented
+                if (lagCompen == LagCompensation.None || sendPacket)
                 {
-                    //collision happens, update state to remote side
-                    sendPacket = true;
-
-                    //check pixel collision
-                    if (UpdateCollision(ballRect, ballColor, platformRect_local, platformColor_local))
-                    {
-                        //if ball center is higher than platform, ball's velocity Y is negative 
-                        //if ball center is lower than platform, ball's velocity Y is positive
-                        Vector2 ballOrigin = new Vector2(ball.Origin.X + ballRect.X, ball.Origin.Y + ballRect.Y);
-                        Vector2 platformOrigin_local = new Vector2(platform_local.Origin.X + platformRect_local.X, platform_local.Origin.Y + platformRect_local.Y);
-
-                        //platform height is 25, so check -12 to 12 around origin.y
-                        if ((ballOrigin.Y - platformOrigin_local.Y) <= -12)
-                            ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y) * -1);
-                        else if ((ballOrigin.Y - platformOrigin_local.Y) >= 12)
-                            ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y));
-                        else if (Math.Abs(ballOrigin.Y - platformOrigin_local.Y) < 12)
-                            ball.Velocity = new Vector2(ball.Velocity.X * -1, ball.Velocity.Y);
-                    }
+                    SendPackets(PacketType.Data);
+                    //if we send packet because some conditions are satisfied
+                    //then remove flag after send packet
+                    if (sendPacket)
+                        sendPacket = false;
+                    //test random lag generator
+                    /*
+                     * test func sometimes cannot receive response from npt server
+                     * which result in program halt
+                     * an exception handler can avoid this situation
+                     * 
+                     * my task is only to validate weather the random
+                     * latency generator working or not
+                     * So! if you need the handler, implement it below
+                     */
+                    //TestLatency();
                 }
+                ReceivePackets(gameTime);
 
-
-                /* under not lagging situation */
-                /* this part of code should only work for server */
-                Rectangle platformRect_remote = platform_remote.Rectangle;
-                Color[] platformColor_remote = platform_remote.ColorData;
-                //ball collade with plaform_player
-                if (ballRect.Intersects(platformRect_remote))
-                {
-                    //check pixel collision
-                    if (UpdateCollision(ballRect, ballColor, platformRect_remote, platformColor_remote))
-                    {
-                        //if ball center is higher than platform, ball's velocity Y is negative 
-                        //if ball center is lower than platform, ball's velocity Y is positive
-                        Vector2 ballOrigin = new Vector2(ball.Origin.X + ballRect.X, ball.Origin.Y + ballRect.Y);
-                        Vector2 platformOrigin_remote = new Vector2(platform_remote.Origin.X + platformRect_remote.X, platform_local.Origin.Y + platformRect_remote.Y);
-
-                        //platform height is 25, so check -12 to 12 around origin.y
-                        if ((ballOrigin.Y - platformOrigin_remote.Y) <= -12)
-                            ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y) * -1);
-                        else if ((ballOrigin.Y - platformOrigin_remote.Y) >= 12)
-                            ball.Velocity = new Vector2(ball.Velocity.X, Math.Abs(ball.Velocity.Y));
-                        else if (Math.Abs(ballOrigin.Y - platformOrigin_remote.Y) < 12)
-                            ball.Velocity = new Vector2(ball.Velocity.X * -1, ball.Velocity.Y);
-                    }
-                }
-
-                base.Update(gameTime);
-                ball.Update(gameTime);
-                platform_local.Update(gameTime);
-                //update remote platform
-                if (lagCompen == LagCompensation.DeadReckoning)
-                    DeadReckoning();
-                //Console.WriteLine(remotePlatformVel.X);
-                platform_remote.Update(gameTime);
-
-                //record dead reckoning data
-                //we check remote platform in receive packet function (host side)
-                //let's check client side local platform
-                //if platform moves, record it.
-
-                //on host side, we check remote platform (coded in receivePacket())
-                //that's where we get remote platform data
-
-                //on client side, we check local platform so that we can compare the same platform
-                //thus, do it below
-                if (!isServer)
-                {
-                    //skip the case that player presses two buttons at the same time
-                    //I'm not gonna do that
-                    //and this game is not for trail or anyone else
-                    if (inputManager.KeyDown(Keys.Left) || inputManager.KeyDown(Keys.Right))
-                    {
-                        if (!deadMoving)
-                        {
-                            deadMoving = true;
-                            timeTag.Add(current);
-                            clientSide.Add(ball.Position.Y);
-                            clientVel.Add(ball.Velocity.Y);
-                            timeTagInMillisec.Add(current.TotalMilliseconds);
-                        }
-                    }
-                    else
-                    {
-                        if (inputManager.KeyUp(Keys.Left) || inputManager.KeyUp(Keys.Right))
-                        {
-                            deadMoving = false;
-                        }
-                    }
-                }
-
-                //testing lag below
-                //because we record client local state and host remote state
-                //so here, we only apply lag to client side
-
-                //Quote from MSDN
-                //The latency simulation is applied on the sending machine, 
-                //so if you set this property differently on each machine, 
-                //only outgoing packets will be affected by the local value of the property.
-
-                //Latency introduced through this setting is not included in the RoundtripTime property, 
-                //which always just reports the physical network latency.
-
-                //Packets sent without any ordering guarantee will be given 
-                //a random latency normally distributed around the specified value, 
-                //introducing packet reordering as well as raw latency. 
-                //Packets sent using SendDataOptions.InOrder will be delayed without reordering.
-
-                //we use SendDataOptions.InOrder
-                //see SendPackets()
-                if (session != null && !isServer)
-                {
-                    var rnd = new Random();
-                    //create a number, 1 <= int <= 1000
-                    int randomLag = rnd.Next(1, 1001);
-                    //apply lag
-                    TimeSpan lagh = new TimeSpan(0, 0, 0, 0, randomLag);
-                    session.SimulatedLatency = lagh;
-                }
-
-                if (session != null)
-                {
-                    //when we have change on ball or platform, update to remote side
-
-                    //generate lag here
-                    //mark server lag flag after send 1st l tag
-                    //mark server consisCheck after send 2nd l tag
-
-                    //we send packet in following situation
-                    //no lag compensation algorithm applied
-                    //collision with platform, local platform oriented
-                    //platform state change, local oriented
-                    if (lagCompen == LagCompensation.None || sendPacket)
-                    {
-                        SendPackets(PacketType.Data);
-                        //if we send packet because some conditions are satisfied
-                        //then remove flag after send packet
-                        if (sendPacket)
-                            sendPacket = false;
-                        //test random lag generator
-                        /*
-                         * test func sometimes cannot receive response from npt server
-                         * which result in program halt
-                         * an exception handler can avoid this situation
-                         * 
-                         * my task is only to validate weather the random
-                         * latency generator working or not
-                         * So! if you need the handler, implement it below
-                         */
-                        //TestLatency();
-                    }
-                    ReceivePackets(gameTime);
-
-                    //Update the NetworkSession
-                    session.Update();
-                }
-            }//end of rountine update
-        }//end of update
+                //Update the NetworkSession
+                session.Update();
+            }
+        }
 
         public override void Draw(SpriteBatch spriteBatch)
         {
@@ -880,13 +861,12 @@ namespace XNAServerClient
                      * 'l': lag flag
                      * 'p': ping test //only enable this to test if random lag function is working
                      *      you should not receive this char in real game
-                     *      NTP server is unstable, causes timedout exception
+                     *      NTP server is unstable, causing timedout exception
                      *      
                      * 'g': client side starts game, send NTP time to host
                      * 'r': host receives client NTP time, 
                      *      process it and compare to local NTP time
-                     *      work out how much time between two sides 
-                     *      when start the game
+                     *      work out how much time between two side started the game
                      */ 
                     hostTag = packetReader.ReadChar();
                     /* normal packet */
@@ -1109,55 +1089,6 @@ namespace XNAServerClient
         }
         */
         #endregion
-
-        //reset game state
-        private void resetGameState()
-        {
-            platform_local.Position = new Vector2(ScreenManager.Instance.Dimensions.X / 2 - platform_local.Dimension.X / 2,
-                ScreenManager.Instance.Dimensions.Y - 20 - platform_local.Dimension.Y);
-            platform_remote.Position = new Vector2(ScreenManager.Instance.Dimensions.X / 2 - platform_remote.Dimension.X / 2, 20);
-
-            if (isServer)
-                ball.Position = new Vector2(ScreenManager.Instance.Dimensions.X / 2 - ball.ImageWidth / 2, 200);
-            else
-                ball.Position = new Vector2(ScreenManager.Instance.Dimensions.X / 2 - ball.ImageWidth / 2, 
-                    ScreenManager.Instance.Dimensions.Y - 200);
-
-            gameStart = false;
-            gameEnd = false;
-            localPlatformMoving = false;
-
-            /* 4.0 */
-            gameState = GameState.Menu;
-            sessionIndex = 0;
-            packetReader = new PacketReader();
-            packetWriter = new PacketWriter();
-
-            /* network variable */
-            hostTag = '/';
-            ballPos = new Vector2(0, 0);
-            ballVel = new Vector2(0, 0);
-            remotePlatformPos = new Vector2(0, 0);
-            remotePlatformVel = new Vector2(0, 0);
-
-            sendPacket = true;
-
-            lag = false;
-            consisCheck = false;
-            lagCompen = LagCompensation.DeadReckoning;
-
-            //record dead reckoning
-            clientSide = new ArrayList();
-            hostSide = new ArrayList();
-            hostVel = new ArrayList();
-            clientVel = new ArrayList();
-
-            timeTag = new ArrayList();
-            timeTagInMillisec = new ArrayList();
-
-            deadMoving = false;
-            initLagInMillisec = 0;
-        }
 
         #region Core of Project
 
