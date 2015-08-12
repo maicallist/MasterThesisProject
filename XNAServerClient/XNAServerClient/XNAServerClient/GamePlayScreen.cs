@@ -29,6 +29,7 @@ namespace XNAServerClient
 
         //game state
         bool gameStart;
+        bool gameEnd;
 
         /* 4.0 */
         Color color;
@@ -44,10 +45,6 @@ namespace XNAServerClient
         PacketReader packetReader;
         //host flag
         bool isServer;
-        //network state
-        bool lag;
-        //lag just past, need check consistency
-        bool consisCheck;
 
         //XNA Lobby, Matching
         enum GameState { Menu, FindGame, PlayGame }
@@ -70,10 +67,11 @@ namespace XNAServerClient
         //lag compensation algorithm
         enum LagCompensation { None, DeadReckoning, PlayPattern }
         LagCompensation lagCompen;
-        
+        bool lagFlag;
 
         //record dead reckoning 
-        bool deadMoving = false;
+        bool DRTestMode;
+        bool deadMoving;
         //store platform moving on host
         ArrayList hostSide;
         ArrayList hostVel;
@@ -93,7 +91,7 @@ namespace XNAServerClient
         //communication latency between
         //client and host
         //local start time
-        static long initLagInMillisec = 0;
+        static long initLagInMillisec;
 
         /*******************************************/
         /*all variables defined beliw are temproral*/
@@ -120,6 +118,7 @@ namespace XNAServerClient
             ball.LoadContent(Content, inputManager);
 
             gameStart = false;
+            gameEnd = false;
             localPlatformMoving = false;
 
             /* 4.0 */
@@ -139,11 +138,17 @@ namespace XNAServerClient
 
             sendPacket = true;
 
-            lag = false;
-            consisCheck = false;
-            lagCompen = LagCompensation.DeadReckoning;
+            lagCompen = LagCompensation.PlayPattern;
+            lagFlag = false;
 
             //record dead reckoning
+            //make below true if you want to record DR data
+            //remember change latency generator
+            //apply it to client side
+            // !isServer in if condition
+            DRTestMode = false;
+
+            deadMoving = false;
             clientSide = new ArrayList();
             hostSide = new ArrayList();
             hostVel = new ArrayList();
@@ -151,6 +156,8 @@ namespace XNAServerClient
 
             timeTag = new ArrayList();
             timeTagInMillisec = new ArrayList();
+
+            initLagInMillisec = 0;
         }
 
         public override void UnloadContent()
@@ -179,6 +186,7 @@ namespace XNAServerClient
             inputManager.Update();
             UpdateInput(gameTime);
 
+            //check game start state
             if (!gameStart && session != null && session.SessionState == NetworkSessionState.Lobby)
             {
                 if (inputManager.KeyPressed(Keys.Y) && isServer)
@@ -203,6 +211,35 @@ namespace XNAServerClient
                     sendPacket = true;
                     
                 }
+            }
+
+            //check game end state
+            //here might be a little tricky
+            //because we are implementing a P2P game(not entirely)
+            //therefore we only check ball position at local platform side
+            //and let remote player update ball position at remote platform side
+            if (gameStart && !gameEnd)
+            { 
+                //800 - 755 (top side of platform) to 800 - 780
+                if (ScreenManager.Instance.Dimensions.Y - ball.Position.Y 
+                    - ball.ImageHeight < 20)
+                {
+                    gameEnd = true;
+                    foreach (LocalNetworkGamer gamer in session.LocalGamers)
+                    {
+                        //tell all clients to start game
+                        if (isServer)
+                            packetWriter.Write('e');
+                        // Send it to all remote gamers.
+                        gamer.SendData(packetWriter, SendDataOptions.InOrder);
+                    }
+                }
+            }
+
+            //check restart input
+            if (gameStart && gameEnd)
+            { 
+            
             }
 
             //update local platform velocity for transmission
@@ -235,6 +272,7 @@ namespace XNAServerClient
                 }
             }
 
+            #region collect dead reckoning performance
             //press p to store dead reckoning data during game
             if (inputManager.KeyPressed(Keys.P))
             {
@@ -284,8 +322,8 @@ namespace XNAServerClient
                     }
                 }
             }
+            #endregion
 
-            
 
             /* check collision with local platform */
             Rectangle platformRect_local = platform_local.Rectangle;
@@ -406,14 +444,36 @@ namespace XNAServerClient
 
             //we use SendDataOptions.InOrder
             //see SendPackets()
-            if (session != null && !isServer)
+
+            //*********************************************************************
+            //*                        IMPORTANCE NOTICE                          *
+            //*remember apply lag to client when you want to record DR (!isServer)*
+            //*apply lag to host in trail (isServer)                              *
+            //*********************************************************************
+            if (session != null && isServer)
             {
                 var rnd = new Random();
                 //create a number, 1 <= int <= 1000
                 int randomLag = rnd.Next(1, 1001);
+
+
                 //apply lag
-                TimeSpan lagh = new TimeSpan(0, 0, 0, 0, randomLag);
+                TimeSpan lagh = new TimeSpan(0, 0, 0, 0, 800 );
                 session.SimulatedLatency = lagh;
+
+                //in this block we generate latency
+                //if we are host 
+                //first send a 'l' char
+                //then we delay message for a period of time
+
+                //thus only clients gets delayed reading host state
+                //host still has no problem reading client states
+
+                //##########################
+                //therefore it is important that
+                //test subjects only play on client machine
+
+
             }
 
             if (session != null)
@@ -536,6 +596,15 @@ namespace XNAServerClient
             ball.Draw(spriteBatch);
             platform_local.Draw(spriteBatch);
             platform_remote.Draw(spriteBatch);
+
+            if (gameEnd)
+            {
+                if (gameStart && gameEnd)
+                    spriteBatch.DrawString(font, "Press Space to Re-Start..",
+                        new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Press Space to Re-Start..").X / 2,
+                            ScreenManager.Instance.Dimensions.Y / 2),
+                        Color.White);
+            }
         }
 
         /* check each pixel on two texture, looking for overlap */
@@ -867,6 +936,7 @@ namespace XNAServerClient
                      * 'r': host receives client NTP time, 
                      *      process it and compare to local NTP time
                      *      work out how much time between two side started the game
+                     * 'e': game end      
                      */ 
                     hostTag = packetReader.ReadChar();
                     /* normal packet */
@@ -928,8 +998,8 @@ namespace XNAServerClient
                         /* current packet indicates latencty simulation, no more packets coming in */
                         /* or indicate latency has returned to normal */
                         //as a recevier, if lag ends, consischeck
-                        lag = !lag;
-                        consisCheck = true;
+                        if (!isServer)
+                            lagFlag = true;
 
                         /* 
                          *  ATTITION
@@ -964,12 +1034,17 @@ namespace XNAServerClient
                         //we have received a game start notification from host
                         ball.Velocity = new Vector2(-7, -10);
                         gameStart = true;
-                        //record local game start time
-                        startTime = gameTime.TotalGameTime;
-                        //record internet game start time
-                        startTimeInt = NTP.GetNetworkTime();
-                        sendPacket = true;
-                        SendStartIntToHost();
+
+                        //if we are recording DR data 
+                        if (DRTestMode)
+                        {
+                            //record local game start time
+                            startTime = gameTime.TotalGameTime;
+                            //record internet game start time
+                            startTimeInt = NTP.GetNetworkTime();
+                            sendPacket = true;
+                            SendStartIntToHost();
+                        }
                     }
                     else if (hostTag == 'r' && isServer)
                     {
@@ -981,6 +1056,12 @@ namespace XNAServerClient
 
                         long hostTicks = NTP.ElapsedTicks(startTimeInt);
                         initLagInMillisec = (clientTicks - hostTicks)/10000;
+                    }
+                    else if (hostTag == 'e')
+                    { 
+                        //we have received a game end flag
+                        ball.Velocity = new Vector2(0, 0);
+                        gameEnd = true;
                     }
                 }
             }
@@ -1008,7 +1089,7 @@ namespace XNAServerClient
             
             
             /* Waiting to be further tested!!! */
-            if (hostTag == 'h' && !isServer && !lag)
+            if (hostTag == 'h' && !isServer && !lagFlag)
             {
                 ball.Position = new Vector2(screenWidth, screenHeight) - (ballPos + ball.Origin) - ball.Origin;
                 ball.Velocity = ballVel * new Vector2(-1, -1);
@@ -1019,7 +1100,7 @@ namespace XNAServerClient
             }
             /* k tag indicates packets is from a client */
             /* without considering lagging, we only update remote platform position */
-            else if (hostTag == 'k' && isServer && !lag)
+            else if (hostTag == 'k' && isServer && !lagFlag)
             {
                 platform_remote.Position =
                     new Vector2(screenWidth - remotePlatformPos.X - platform_remote.Dimension.X, screenHeight - platform_remote.Dimension.Y - remotePlatformPos.Y);
