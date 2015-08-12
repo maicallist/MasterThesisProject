@@ -213,35 +213,6 @@ namespace XNAServerClient
                 }
             }
 
-            //check game end state
-            //here might be a little tricky
-            //because we are implementing a P2P game(not entirely)
-            //therefore we only check ball position at local platform side
-            //and let remote player update ball position at remote platform side
-            if (gameStart && !gameEnd && isServer)
-            {
-                //800 - 755 (top side of platform) to 800 - 780
-                if (ball.Position.Y + ball.ImageHeight >= 
-                    ScreenManager.Instance.Dimensions.Y - 20
-                    || ball.Position.Y <= 20)
-                {
-                    gameEnd = true;
-                    foreach (LocalNetworkGamer gamer in session.LocalGamers)
-                    {
-                        //tell all remote gamer to end game
-                        packetWriter.Write('e');
-                        // Send it to all remote gamers.
-                        gamer.SendData(packetWriter, SendDataOptions.InOrder);
-                    }
-                }
-            }
-
-            //check restart input
-            if (gameStart && gameEnd)
-            { 
-            
-            }
-
             //update local platform velocity for transmission
             if (inputManager.KeyUp(Keys.Left) && inputManager.KeyUp(Keys.Right))
             {
@@ -512,6 +483,35 @@ namespace XNAServerClient
 
                 //Update the NetworkSession
                 session.Update();
+            }
+
+            //check game end state
+            //here might be a little tricky
+            //because we are implementing a P2P game(not entirely)
+            //therefore we only check ball position at local platform side
+            //and let remote player update ball position at remote platform side
+            if (gameStart && !gameEnd && isServer)
+            {
+                //800 - 755 (top side of platform) to 800 - 780
+                if (ball.Position.Y + ball.ImageHeight >=
+                    ScreenManager.Instance.Dimensions.Y - 20
+                    || ball.Position.Y <= 20)
+                {
+                    gameEnd = true;
+                    foreach (LocalNetworkGamer gamer in session.LocalGamers)
+                    {
+                        //tell all remote gamer to end game
+                        packetWriter.Write('e');
+                        // Send it to all remote gamers.
+                        gamer.SendData(packetWriter, SendDataOptions.InOrder);
+                    }
+                }
+            }
+
+            //check restart input
+            if (gameStart && gameEnd)
+            {
+
             }
         }
 
