@@ -221,8 +221,8 @@ namespace XNAServerClient
             if (gameStart && !gameEnd)
             {
                 //800 - 755 (top side of platform) to 800 - 780
-                if (ScreenManager.Instance.Dimensions.Y - ball.Position.Y
-                    - ball.ImageHeight < 20)
+                if (ball.Position.Y + ball.ImageHeight >= 
+                    ScreenManager.Instance.Dimensions.Y - 20)
                 {
                     //Console.WriteLine("Local: " + session.LocalGamers.Count);
                     //Console.WriteLine("That local is host? " + session.LocalGamers[0].IsHost);
