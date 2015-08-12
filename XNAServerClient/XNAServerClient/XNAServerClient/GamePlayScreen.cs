@@ -490,29 +490,23 @@ namespace XNAServerClient
             //because we are implementing a P2P game(not entirely)
             //therefore we only check ball position at local platform side
             //and let remote player update ball position at remote platform side
-            if (gameStart && !gameEnd && isServer)
-            {
-                //800 - 755 (top side of platform) to 800 - 780
-                if (ball.Position.Y + ball.ImageHeight >=
-                    ScreenManager.Instance.Dimensions.Y - 20
-                    || ball.Position.Y <= 20)
-                {
-                    gameEnd = true;
-                    foreach (LocalNetworkGamer gamer in session.LocalGamers)
-                    {
-                        //tell all remote gamer to end game
-                        packetWriter.Write('e');
-                        // Send it to all remote gamers.
-                        gamer.SendData(packetWriter, SendDataOptions.InOrder);
-                    }
-                }
-            }
-
-            //check restart input
-            if (gameStart && gameEnd)
-            {
-
-            }
+            //if (gameStart && !gameEnd && isServer)
+            //{
+            //    //800 - 755 (top side of platform) to 800 - 780
+            //    if (ball.Position.Y + ball.ImageHeight >=
+            //        ScreenManager.Instance.Dimensions.Y - 20
+            //        || ball.Position.Y <= 20)
+            //    {
+            //        gameEnd = true;
+            //        foreach (LocalNetworkGamer gamer in session.LocalGamers)
+            //        {
+            //            //tell all remote gamer to end game
+            //            packetWriter.Write('e');
+            //            // Send it to all remote gamers.
+            //            gamer.SendData(packetWriter, SendDataOptions.InOrder);
+            //        }
+            //    }
+            //}
         }
 
         public override void Draw(SpriteBatch spriteBatch)
