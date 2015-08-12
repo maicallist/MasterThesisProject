@@ -1094,7 +1094,7 @@ namespace XNAServerClient
             /* Waiting to be further tested!!! */
             if (hostTag == 'h' && !isServer && !lagFlag)
             {
-                Console.WriteLine("Got a packet from host");
+                //Console.WriteLine("Got a packet from host");
                 ball.Position = new Vector2(screenWidth, screenHeight) - (ballPos + ball.Origin) - ball.Origin;
                 ball.Velocity = ballVel * new Vector2(-1, -1);
 
@@ -1106,7 +1106,7 @@ namespace XNAServerClient
             /* without considering lagging, we only update remote platform position */
             else if (hostTag == 'k' && isServer && !lagFlag)
             {
-                Console.WriteLine("Got a packet from client");
+                //Console.WriteLine("Got a packet from client");
                 platform_remote.Position =
                     new Vector2(screenWidth - remotePlatformPos.X - platform_remote.Dimension.X, screenHeight - platform_remote.Dimension.Y - remotePlatformPos.Y);
                 platform_remote.Velocity = remotePlatformVel * new Vector2(-1, -1);
