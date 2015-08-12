@@ -218,16 +218,13 @@ namespace XNAServerClient
             //because we are implementing a P2P game(not entirely)
             //therefore we only check ball position at local platform side
             //and let remote player update ball position at remote platform side
-            if (gameStart && !gameEnd)
+            if (gameStart && !gameEnd && isServer)
             {
                 //800 - 755 (top side of platform) to 800 - 780
                 if (ball.Position.Y + ball.ImageHeight >= 
-                    ScreenManager.Instance.Dimensions.Y - 20)
+                    ScreenManager.Instance.Dimensions.Y - 20
+                    || ball.Position.Y <= 20)
                 {
-                    //Console.WriteLine("Local: " + session.LocalGamers.Count);
-                    //Console.WriteLine("That local is host? " + session.LocalGamers[0].IsHost);
-                    //Console.WriteLine("All: " + session.AllGamers.Count);
-                    //Console.WriteLine("Remote: " + session.RemoteGamers);
                     gameEnd = true;
                     foreach (LocalNetworkGamer gamer in session.LocalGamers)
                     {
@@ -384,6 +381,7 @@ namespace XNAServerClient
                 }
             }
 
+            
             base.Update(gameTime);
             ball.Update(gameTime);
             platform_local.Update(gameTime);
@@ -600,14 +598,12 @@ namespace XNAServerClient
             platform_local.Draw(spriteBatch);
             platform_remote.Draw(spriteBatch);
 
-            if (gameEnd)
-            {
-                if (gameStart && gameEnd)
-                    spriteBatch.DrawString(font, "Press Space to Re-Start..",
-                        new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Press Space to Re-Start..").X / 2,
-                            ScreenManager.Instance.Dimensions.Y / 2),
-                        Color.White);
-            }
+            if (gameStart && gameEnd)
+                spriteBatch.DrawString(font, "Press Space to Re-Start..",
+                    new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Press Space to Re-Start..").X / 2,
+                        ScreenManager.Instance.Dimensions.Y / 2),
+                    Color.White);
+
         }
 
         /* check each pixel on two texture, looking for overlap */
