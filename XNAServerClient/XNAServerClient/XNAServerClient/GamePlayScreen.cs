@@ -219,9 +219,9 @@ namespace XNAServerClient
             //therefore we only check ball position at local platform side
             //and let remote player update ball position at remote platform side
             if (gameStart && !gameEnd)
-            { 
+            {
                 //800 - 755 (top side of platform) to 800 - 780
-                if (ScreenManager.Instance.Dimensions.Y - ball.Position.Y 
+                if (ScreenManager.Instance.Dimensions.Y - ball.Position.Y
                     - ball.ImageHeight < 20)
                 {
                     //Console.WriteLine("Local: " + session.LocalGamers.Count);
@@ -232,8 +232,7 @@ namespace XNAServerClient
                     foreach (LocalNetworkGamer gamer in session.LocalGamers)
                     {
                         //tell all remote gamer to end game
-                        if (isServer)
-                            packetWriter.Write('e');
+                        packetWriter.Write('e');
                         // Send it to all remote gamers.
                         gamer.SendData(packetWriter, SendDataOptions.InOrder);
                     }
