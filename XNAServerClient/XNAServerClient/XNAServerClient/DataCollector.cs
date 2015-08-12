@@ -221,6 +221,7 @@ namespace XNAServerClient
             //current game time, used in data collection
             if (start)
                 current = gameTime.TotalGameTime - startTime;
+            
             inputManager.Update();
 
             if (!start)

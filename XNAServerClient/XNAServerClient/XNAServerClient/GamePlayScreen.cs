@@ -93,9 +93,15 @@ namespace XNAServerClient
         //local start time
         static long initLagInMillisec;
 
+        //test periodic lag
+        int lagCounter = 420;
+        bool lagCounterIndicator = false;
+        
         /*******************************************/
         /*all variables defined beliw are temproral*/
         /*******************************************/
+
+        
 
         #endregion
 
@@ -176,6 +182,7 @@ namespace XNAServerClient
             //get current time for recording
             if(gameStart)
                 current = gameTime.TotalGameTime - startTime;
+
             /*
              * only sned data when necessary
              * collade with platform
@@ -426,11 +433,15 @@ namespace XNAServerClient
             {
                 var rnd = new Random();
                 //create a number, 1 <= int <= 1000
-                int randomLag = rnd.Next(1, 1001);
-
+                int randomLag;
+                
+                if (lagCounterIndicator)
+                    randomLag = rnd.Next(500, 1001);
+                else
+                    randomLag = rnd.Next(0, 201);
 
                 //apply lag
-                TimeSpan lagh = new TimeSpan(0, 0, 0, 0, 8);
+                TimeSpan lagh = new TimeSpan(0, 0, 0, 0, randomLag);
                 session.SimulatedLatency = lagh;
 
                 //in this block we generate latency
@@ -598,6 +609,29 @@ namespace XNAServerClient
                         ScreenManager.Instance.Dimensions.Y / 2),
                     Color.White);
 
+            //because draw method is called 60 times pre second
+            //therefor to can use this feature as a clock
+            //to generate periodic lag
+
+            //first we count down
+            //when counter is zero 
+            //we reset the counter and 
+            //start generate lag
+            //repeat this loop
+            if (isServer && gameStart && !gameEnd)
+            {
+                lagCounter--;
+                if (lagCounter == 0 && lagCounterIndicator)
+                {
+                    lagCounterIndicator = false;
+                    lagCounter = 420;
+                }
+                else if (lagCounter == 0 && !lagCounterIndicator)
+                {
+                    lagCounterIndicator = true;
+                    lagCounter = 180;
+                }
+            }
         }
 
         /* check each pixel on two texture, looking for overlap */
@@ -991,8 +1025,7 @@ namespace XNAServerClient
                         /* current packet indicates latencty simulation, no more packets coming in */
                         /* or indicate latency has returned to normal */
                         //as a recevier, if lag ends, consischeck
-                        if (!isServer)
-                            lagFlag = true;
+                        lagFlag = true;
 
                         /* 
                          *  ATTITION
@@ -1184,6 +1217,10 @@ namespace XNAServerClient
         }
         #endregion
 
+        #region AI
+
+
+        #endregion
         /************************************/
         /**********test functions************/
         /***********delete later*************/
