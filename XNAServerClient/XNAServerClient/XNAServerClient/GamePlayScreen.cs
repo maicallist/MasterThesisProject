@@ -224,10 +224,13 @@ namespace XNAServerClient
                 if (ScreenManager.Instance.Dimensions.Y - ball.Position.Y 
                     - ball.ImageHeight < 20)
                 {
+                    Console.WriteLine("Local: " + session.LocalGamers.Count);
+                    Console.WriteLine("All: " + session.AllGamers.Count);
+                    Console.WriteLine("Remote: " + session.RemoteGamers);
                     gameEnd = true;
                     foreach (LocalNetworkGamer gamer in session.LocalGamers)
                     {
-                        //tell all clients to start game
+                        //tell all remote gamer to end game
                         if (isServer)
                             packetWriter.Write('e');
                         // Send it to all remote gamers.
@@ -458,7 +461,7 @@ namespace XNAServerClient
 
 
                 //apply lag
-                TimeSpan lagh = new TimeSpan(0, 0, 0, 0, 800 );
+                TimeSpan lagh = new TimeSpan(0, 0, 0, 0, 8);
                 session.SimulatedLatency = lagh;
 
                 //in this block we generate latency
