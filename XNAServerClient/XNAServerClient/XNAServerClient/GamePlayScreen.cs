@@ -375,14 +375,14 @@ namespace XNAServerClient
             
             base.Update(gameTime);
             ball.Update(gameTime);
-            platform_local.Update(gameTime, false);
+            platform_local.Update(gameTime);
             //update remote platform
             if (lagCompen == LagCompensation.DeadReckoning)
                 DeadReckoning();
             //when we update platform_com info
             //we now have to check whether AI controls the platform
             //if so, in platform.cs, disable player control
-            platform_remote.Update(gameTime, AIControl);
+            platform_remote.Update(gameTime);
             
             //record dead reckoning
             //we check remote platform in receive packet function (host side)

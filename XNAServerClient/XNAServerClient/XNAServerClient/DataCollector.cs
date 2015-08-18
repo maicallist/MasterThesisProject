@@ -553,8 +553,8 @@ namespace XNAServerClient
 
             base.Update(gameTime);
             ball.Update(gameTime);
-            platform_com.Update(gameTime, false);
-            platform_player.Update(gameTime, false);
+            platform_com.Update(gameTime);
+            platform_player.Update(gameTime);
 
             /* show estimated start move ball y position on screen */
             doPrediction();

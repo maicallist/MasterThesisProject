@@ -101,7 +101,7 @@ namespace XNAServerClient
             dimension = Vector2.Zero;
         }
 
-        public override void Update(GameTime gameTime, bool AI)
+        public override void Update(GameTime gameTime)
         {
             base.Update(gameTime);
             inputManager.Update();
@@ -112,8 +112,6 @@ namespace XNAServerClient
                 alpha = 1.0f;
 
             // update key state
-            if (!AI)
-            {
                 if (inputManager.KeyDown(Keys.Left, Keys.A) && controlByPlayer)
                 {
                     position = new Vector2(position.X - moveSpeed, position.Y);
@@ -122,7 +120,6 @@ namespace XNAServerClient
                 {
                     position = new Vector2(position.X + moveSpeed, position.Y);
                 }
-            }
             /* check bounds */
             if (position.X < 0)
                 position = new Vector2(0, position.Y);
