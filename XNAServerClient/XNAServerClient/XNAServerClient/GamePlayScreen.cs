@@ -211,12 +211,20 @@ namespace XNAServerClient
 
                     ball.Velocity = new Vector2(-7, -10);
                     gameStart = true;
-                    //record local game start time
-                    startTime = gameTime.TotalGameTime;
-                    //record internet game start time
-                    startTimeInt = NTP.GetNetworkTime();
                     sendPacket = true;
-                    
+
+                    //if we are collecting DR data
+                    //then we need to get a NTP time
+                    //when game started
+                    //and host notifies clients 
+                    //that gets a NTP time too
+                    if (DRTestMode)
+                    {
+                        //record local game start time
+                        startTime = gameTime.TotalGameTime;
+                        //record internet game start time
+                        startTimeInt = NTP.GetNetworkTime();
+                    }
                 }
             }
 
