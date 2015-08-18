@@ -94,8 +94,9 @@ namespace XNAServerClient
         static long initLagInMillisec;
 
         //test periodic lag
-        int lagCounter = 420;
-        bool lagCounterIndicator = false;
+        int lagCounter;
+        bool lagIndicator;
+        bool AIControl;
         
         /*******************************************/
         /*all variables defined beliw are temproral*/
@@ -164,6 +165,10 @@ namespace XNAServerClient
             timeTagInMillisec = new ArrayList();
 
             initLagInMillisec = 0;
+
+            lagCounter = 420;
+            lagIndicator = false;
+            AIControl = false;
         }
 
         public override void UnloadContent()
@@ -370,12 +375,14 @@ namespace XNAServerClient
             
             base.Update(gameTime);
             ball.Update(gameTime);
-            platform_local.Update(gameTime);
+            platform_local.Update(gameTime, false);
             //update remote platform
             if (lagCompen == LagCompensation.DeadReckoning)
                 DeadReckoning();
-            //Console.WriteLine(remotePlatformVel.X);
-            platform_remote.Update(gameTime);
+            //when we update platform_com info
+            //we now have to check whether AI controls the platform
+            //if so, in platform.cs, disable player control
+            platform_remote.Update(gameTime, AIControl);
             
             //record dead reckoning
             //we check remote platform in receive packet function (host side)
@@ -443,10 +450,22 @@ namespace XNAServerClient
                 //create a number, 1 <= int <= 1000
                 int randomLag;
                 
-                if (lagCounterIndicator)
-                    randomLag = rnd.Next(500, 1001);
+                if (lagIndicator)
+                    randomLag = rnd.Next(400, 1001);
                 else
                     randomLag = rnd.Next(0, 201);
+
+                //at here, we check how lag we are
+                //if lag is high enough
+                //switch to AI control
+                //otherwise player controls
+
+                //AI = true disables player control
+                //in platform.cs class
+                if (randomLag >= 450)
+                    AIControl = true;
+                else
+                    AIControl = false;
 
                 //apply lag
                 TimeSpan lagh = new TimeSpan(0, 0, 0, 0, randomLag);
@@ -629,14 +648,14 @@ namespace XNAServerClient
             if (isServer && gameStart && !gameEnd)
             {
                 lagCounter--;
-                if (lagCounter == 0 && lagCounterIndicator)
+                if (lagCounter == 0 && lagIndicator)
                 {
-                    lagCounterIndicator = false;
+                    lagIndicator = false;
                     lagCounter = 420;
                 }
-                else if (lagCounter == 0 && !lagCounterIndicator)
+                else if (lagCounter == 0 && !lagIndicator)
                 {
-                    lagCounterIndicator = true;
+                    lagIndicator = true;
                     lagCounter = 180;
                 }
             }
@@ -1232,7 +1251,7 @@ namespace XNAServerClient
         /************************************/
         /**********test functions************/
         /***********delete later*************/
-
+        /************************************/
         //if client, request a NTP and send it to host
         //so host can work out client to host trip time
         void TestLatency()

@@ -101,7 +101,7 @@ namespace XNAServerClient
             dimension = Vector2.Zero;
         }
 
-        public override void Update(GameTime gameTime)
+        public override void Update(GameTime gameTime, bool AI)
         {
             base.Update(gameTime);
             inputManager.Update();
@@ -112,15 +112,17 @@ namespace XNAServerClient
                 alpha = 1.0f;
 
             // update key state
-            if (inputManager.KeyDown(Keys.Left, Keys.A) && controlByPlayer)
+            if (!AI)
             {
-                position = new Vector2(position.X - moveSpeed, position.Y);
+                if (inputManager.KeyDown(Keys.Left, Keys.A) && controlByPlayer)
+                {
+                    position = new Vector2(position.X - moveSpeed, position.Y);
+                }
+                if (inputManager.KeyDown(Keys.Right, Keys.D) && controlByPlayer)
+                {
+                    position = new Vector2(position.X + moveSpeed, position.Y);
+                }
             }
-            if (inputManager.KeyDown(Keys.Right, Keys.D) && controlByPlayer)
-            {
-                position = new Vector2(position.X + moveSpeed, position.Y);
-            }
-
             /* check bounds */
             if (position.X < 0)
                 position = new Vector2(0, position.Y);
@@ -130,7 +132,6 @@ namespace XNAServerClient
             //update rectangle position
             sourceRect.X = (int)position.X;
             sourceRect.Y = (int)position.Y;
-
         }
 
         public override void Draw(SpriteBatch spriteBatch)
