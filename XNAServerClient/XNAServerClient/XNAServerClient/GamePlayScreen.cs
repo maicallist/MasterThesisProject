@@ -94,14 +94,74 @@ namespace XNAServerClient
         static long initLagInMillisec;
 
         //test periodic lag
+        enum Diffculty { Prediction, ExtremeHard }
+
+        Diffculty AIMode = Diffculty.Prediction;
+
         int lagCounter;
         bool lagIndicator;
         bool AIControl;
+
+        bool hasPrediCatch;
+        bool hasPrediCenter;
+
+        bool movePlatformRemote;
+        //X coordinate where AI needs to move
+        float targetPositionX;
+
+        //4th
+        Vector2 windowEdge;
+        //following data type used
+        //in statePack reversePosition(statePack state)
+        //because our prediction model is based on 
+        //the platform at bottom
+        //so we need to convert data for the platform at top
+        struct statePack
+        {
+            Vector2 ballVel;
+            Vector2 ballPos;
+            Vector2 platPos;
+            Vector2 windEdg;
+
+            public statePack(Vector2 vel, Vector2 posb, Vector2 posp, Vector2 wdwe)
+            {
+                ballVel = vel;
+                ballPos = posb;
+                platPos = posp;
+                windEdg = wdwe;
+            }
+
+            public Vector2 bVel
+            {
+                get { return ballVel; }
+                set { ballVel = value; }
+            }
+
+            public Vector2 bPos
+            {
+                get { return ballPos; }
+                set { ballPos = value; }
+            }
+
+            public Vector2 pPos
+            {
+                get { return platPos; }
+                set { platPos = value; }
+            }
+
+            public Vector2 wEdg
+            {
+                get { return windEdg; }
+                set { windEdg = value; }
+            }
+
+            statePack currentState;
+        }
         
         /*******************************************/
         /*all variables defined beliw are temproral*/
         /*******************************************/
-
+        string testStr = "";
         
 
         #endregion
@@ -169,6 +229,13 @@ namespace XNAServerClient
             lagCounter = 420;
             lagIndicator = false;
             AIControl = false;
+
+            hasPrediCatch = false;
+            hasPrediCenter = false;
+            windowEdge = new Vector2(0, 0);
+
+            movePlatformRemote = false;
+            targetPositionX = 0f;
         }
 
         public override void UnloadContent()
@@ -184,6 +251,9 @@ namespace XNAServerClient
 
         public override void Update(GameTime gameTime)
         {
+            /*****test variables******/
+            testStr = "";
+            /*************************/
             //get current time for recording
             if(gameStart)
                 current = gameTime.TotalGameTime - startTime;
@@ -265,7 +335,7 @@ namespace XNAServerClient
 
             #region collect dead reckoning performance
             //press p to store dead reckoning data during game
-            if (inputManager.KeyPressed(Keys.P))
+            if (inputManager.KeyPressed(Keys.P) && DRTestMode)
             {
                 //serialize data
                 //output path - file name
@@ -327,7 +397,6 @@ namespace XNAServerClient
             {
                 //collision happens, update state to remote side
                 sendPacket = true;
-
                 //check pixel collision
                 if (UpdateCollision(ballRect, ballColor, platformRect_local, platformColor_local))
                 {
@@ -354,6 +423,7 @@ namespace XNAServerClient
             //ball collade with plaform_player
             if (ballRect.Intersects(platformRect_remote))
             {
+                windowEdge = new Vector2(0, 0);
                 //check pixel collision
                 if (UpdateCollision(ballRect, ballColor, platformRect_remote, platformColor_remote))
                 {
@@ -372,18 +442,89 @@ namespace XNAServerClient
                 }
             }
 
+            //check if ball is at window edge
+            //for 4th prediction model
+            if (ball.Position.X <= 0
+                || ball.Position.X + ball.ImageWidth >= ScreenManager.Instance.Dimensions.X)
+            {
+                if (ball.Velocity.Y < 0)
+                    windowEdge = ball.Position;
+            }
             
+            //do XNA update for objects
             base.Update(gameTime);
             ball.Update(gameTime);
             platform_local.Update(gameTime);
             //update remote platform
             if (lagCompen == LagCompensation.DeadReckoning)
                 DeadReckoning();
-            //when we update platform_com info
+            //when we update platform_remote info
             //we now have to check whether AI controls the platform
             //if so, in platform.cs, disable player control
             platform_remote.Update(gameTime);
             
+            //After we have updated all state
+            //let's check current state
+            //to enable AI controls
+
+            //@param AIControl
+            //use this variable on host side
+            //to indicate network latency generation
+
+            //we have lagFlag is true
+            //but AIControl is false
+            //means we just received lagFlag
+            //do a state check
+            //and flag AIControl, let AI do the trick
+            //
+            if (lagFlag && !AIControl && !isServer)
+            {
+                testStr += "Prestate_check ";
+                //if ball is flying to platform_remote
+                if (ball.Velocity.Y < 0)
+                {
+                    testStr += "Moving Up ";
+                }
+                else//if ball is flying away from platform_remote
+                {
+                    testStr += "Moving Down ";
+                }
+                
+                //tell AI start playing the remote platfrom
+                AIControl = true;
+            }
+
+            //on the other hand
+            //if we have done the pre-state check
+            //and AI has the green light
+            //shopping time!
+            if (lagFlag && AIControl && !isServer)
+            {
+                testStr += "AI_control ";
+                //if we know where we need to move
+                //just move it
+                if (movePlatformRemote)
+                {
+
+                }
+                //if ball is flying  towards 
+                //the remote platform
+                //& we still don't have
+                //the prediction - then predict
+                else if (ball.Velocity.Y < 0 && !hasPrediCatch)
+                {
+
+                }
+                //if ball is flying to local
+                //and we haven't got center prediction
+                else if (ball.Velocity.Y > 0 && hasPrediCenter)
+                {
+
+                }
+            }
+            else
+                testStr += "Player_Control ";
+
             //record dead reckoning
             //we check remote platform in receive packet function (host side)
             //let's check client side local platform
@@ -394,9 +535,9 @@ namespace XNAServerClient
 
             //on client side, we check local platform so that we can compare the same platform
             //thus, do it below
-            if (!isServer)
+            if (!isServer && DRTestMode)
             {
-                //skip the case that player presses two buttons at the same time
+                //skip the case that player presses two keys at same time
                 //I'm not gonna do that
                 //and this game is not for trail or anyone else
                 if (inputManager.KeyDown(Keys.Left) || inputManager.KeyDown(Keys.Right))
@@ -462,15 +603,32 @@ namespace XNAServerClient
 
                 //AI = true disables player control
                 //in platform.cs class
-                if (randomLag >= 450)
-                    AIControl = true;
-                else
-                    AIControl = false;
 
+                //remember we have a variable call lagFlag
+                //see ProcessReceivedPacket()
+                //we use lagFlag to control whether
+                //program applies received state to local
+                //since we decide only apply lag to host side
+                //so we can't change lagFlag on host 
+                //and only clients change that flag, enable AI features
+                if (randomLag >= 450)
+                {
+                    //mark on host side
+                    //so we remember 
+                    //what state we are in 
+                    AIControl = true;
+                    //tell client lag
+                    tellClientLag('l');
+                }
+                else
+                {
+                    AIControl = false;
+                    tellClientLag('n');
+                }
                 //apply lag
                 TimeSpan lagh = new TimeSpan(0, 0, 0, 0, randomLag);
                 session.SimulatedLatency = lagh;
-
+                
                 //in this block we generate latency
                 //if we are host 
                 //first send a 'l' char
@@ -483,7 +641,7 @@ namespace XNAServerClient
                 //therefore it is important that
                 //test subjects only play on client machine
 
-
+                testStr += "Ping_" + randomLag + " ";
             }
 
             if (session != null)
@@ -982,6 +1140,7 @@ namespace XNAServerClient
                      * 'h': host game state
                      * 'k': client game state
                      * 'l': lag flag
+                     * 'n': lag flag down
                      * 'p': ping test //only enable this to test if random lag function is working
                      *      you should not receive this char in real game
                      *      NTP server is unstable, causing timedout exception
@@ -996,6 +1155,8 @@ namespace XNAServerClient
                     /* normal packet */
                     /* keep reading following message */
 
+                    //rewrite following section in switch-case style
+                    //may improve performance
                     if ((hostTag == 'k' && isServer) || (hostTag == 'h' && !isServer))
                     {
                         ballPos = packetReader.ReadVector2();
@@ -1052,15 +1213,27 @@ namespace XNAServerClient
                         /* current packet indicates latencty simulation, no more packets coming in */
                         /* or indicate latency has returned to normal */
                         //as a recevier, if lag ends, consischeck
-                        lagFlag = true;
+                        if (!isServer)
+                            lagFlag = true;
+                        //we are the client
+                        //and we have received a lag flag
+                        //it's time to enable our AI to replace player
 
-                        /* 
-                         *  ATTITION
-                         *  as receiver, may be we need send a packet
-                         *  to update server, right after lag.
-                         *  if so, do it below.
-                         */
+                        //since lag flag is up
+                        //in ProcessReceivedPacket()
+                        //we have already stop process incoming packet
+                        //from the host
 
+                        //before we do anything, in Update(), let's check current state
+                        //is the ball flying to platform_remote? or not?
+                    }
+                    else if (hostTag == 'n')
+                    {
+                        if (!isServer)
+                        {
+                            lagFlag = false;
+                            AIControl = false;
+                        }
                     }
                     else if (hostTag == 'p' && isServer)
                     {
@@ -1080,10 +1253,10 @@ namespace XNAServerClient
                         byte[] bytes = packetReader.ReadBytes(8);
                         long clientTicks = BitConverter.ToInt64(bytes, 0);
 
-                        Console.WriteLine("Possible Latency(CTH) : " + (hostTicks - clientTicks)/10000 + " ms");
+                        Console.WriteLine("Possible Latency(CTH) : " + (hostTicks - clientTicks) / 10000 + " ms");
                     }
                     else if (hostTag == 'g' && !isServer)
-                    { 
+                    {
                         //we have received a game start notification from host
                         ball.Velocity = new Vector2(-7, -10);
                         gameStart = true;
@@ -1108,10 +1281,10 @@ namespace XNAServerClient
                         long clientTicks = BitConverter.ToInt64(bytes, 0);
 
                         long hostTicks = NTP.ElapsedTicks(startTimeInt);
-                        initLagInMillisec = (clientTicks - hostTicks)/10000;
+                        initLagInMillisec = (clientTicks - hostTicks) / 10000;
                     }
                     else if (hostTag == 'e')
-                    { 
+                    {
                         //we have received a game end flag
                         ball.Velocity = new Vector2(0, 0);
                         gameEnd = true;
@@ -1144,7 +1317,6 @@ namespace XNAServerClient
             /* Waiting to be further tested!!! */
             if (hostTag == 'h' && !isServer && !lagFlag)
             {
-                //Console.WriteLine("Got a packet from host");
                 ball.Position = new Vector2(screenWidth, screenHeight) - (ballPos + ball.Origin) - ball.Origin;
                 ball.Velocity = ballVel * new Vector2(-1, -1);
 
@@ -1156,23 +1328,31 @@ namespace XNAServerClient
             /* without considering lagging, we only update remote platform position */
             else if (hostTag == 'k' && isServer && !lagFlag)
             {
-                //Console.WriteLine("Got a packet from client");
                 platform_remote.Position =
                     new Vector2(screenWidth - remotePlatformPos.X - platform_remote.Dimension.X, screenHeight - platform_remote.Dimension.Y - remotePlatformPos.Y);
                 platform_remote.Velocity = remotePlatformVel * new Vector2(-1, -1);
             }
-
-            /* 
-             * if there was a lag, we need to enable remote prediction on both side 
-             * which should be in
-             * 
-             * void Update() 
-             * 
-             * flag up in receivepacket()
-             * lag = !lag;
-             */ 
         }
 
+        //whenever host decide to create lag
+        //it needs to send a packet to client 
+        //then clients know they need 
+        //to activate AI Controls
+        //
+        //Yeah! I'm cheating
+        void tellClientLag(char c)
+        {
+
+            foreach (LocalNetworkGamer gamer in session.LocalGamers)
+            {
+                //tell all clients lag is comming
+                packetWriter.Write(c);
+                // Send it to all remote gamers.
+                gamer.SendData(packetWriter, SendDataOptions.InOrder);
+            }
+        }
+
+        #region XNA-Xbox live service
         /// <summary>
         /// SignIn displays the Xbox360 Guide
         ///
@@ -1199,6 +1379,7 @@ namespace XNAServerClient
             session.GameEnded -= new EventHandler<GameEndedEventArgs>(session_GameEnded);
             session.SessionEnded -= new EventHandler<NetworkSessionEndedEventArgs>(session_SessionEnded);
         }
+        #endregion
 
         #region Handlers
         //Event Handling
@@ -1238,16 +1419,200 @@ namespace XNAServerClient
                 platform_remote.Position += (remotePlatformVel * new Vector2(-1, -1));
         }
 
-        public void Prediction()
+        //following method can predict 
+        //when to move platform 
+        //while ball is flying to platform_remote
+        public void Prediction_Catch()
         { 
-        
+            
+        }
+
+
+        /*
+         * following 2 method 
+         * are the prediction models
+         */ 
+        public double predict_disToPlatform(double dis, int vel, int posx, int platx)
+        {
+            /* 
+             * Adjusted R Square    0.94762887427949
+             * std err              27.156267937301
+             */
+            double y;
+            double veld = Math.Pow(vel, 2) + 100;
+            veld = Math.Sqrt(veld);
+            y = Math.Round(706.3240273 + -0.965004 * dis + 2.2408532 * veld
+                + 0.0410435 * posx + 0.1021678 * platx, 3);
+
+            return y;
+        }
+
+        /*
+         * ball y position when ball hit left or right window bounds (ball.velocity.y > 0 only)
+         */
+        public double predict_disToPlatform(double dis, int vel, int posx, int platx, int edge)
+        {
+            /* 
+             * Adjusted R Square    0.948060344493643
+             * std err              25.9697490413051
+             */
+            double y;
+            y = Math.Round(706.5644181 + -0.9503573 * dis
+                + 0.0497304 * posx + 0.1652617 * platx
+                + 0.0655089 * windowEdge.Y, 3);
+
+            return y;
+        }
+
+        //we first reverse position for com
+        //and apply our prediction model
+        private void doPrediction_VeryHardMoveToCenter(statePack state)
+        {
+            state = reversePosition(state);
+            //calc distance first
+            double db = Math.Pow(state.bPos.X - state.pPos.X, 2)
+                + Math.Pow(state.bPos.Y - state.pPos.Y, 2);
+            db = Math.Sqrt(db);
+            //calc vel
+            double vel = Math.Pow(state.bVel.X, 2) + Math.Pow(state.bVel.Y, 2);
+            vel = Math.Sqrt(vel);
+
+            db = db * -0.779862391 + vel * 5.494813831 + state.bPos.X * 0.128871623
+                + state.pPos.X * -0.11275278 + 654.4130811;
+
+            if (Math.Abs(db - state.bPos.Y) <= 3 || state.bPos.Y < 300)
+                movePlatformRemote = true;
+        }
+
+        //for very hard AI
+        //the player profile we use
+        //which our prediction model is based on 
+        //single player mode which player is at bottom
+        //thus, we need to reverse position
+        //so prediction can be used for 
+        //com platform (at top of screen)
+        private statePack reversePosition(statePack state)
+        {
+            // 0 to 580 screen width
+            float screenWidth = ScreenManager.Instance.Dimensions.X;
+            float screenHeight = ScreenManager.Instance.Dimensions.Y;
+            state.bVel = new Vector2(state.bVel.X * -1, state.bVel.Y * -1);
+            state.bPos = new Vector2(screenWidth - state.bPos.X, screenHeight - state.bPos.Y);
+            state.pPos = new Vector2(screenWidth - state.pPos.X, screenHeight - state.pPos.Y);
+            state.wEdg = new Vector2(screenWidth - state.wEdg.X, screenHeight - state.wEdg.Y);
+
+            return state;
         }
         #endregion
 
         #region AI
 
+        /* move com platform to hit ball back */
+        //this function only work out where ball lands 
+        //when moving up to platform_com direction
+        //then update a flag "movePlatformCom"
 
+        //in Update() we check the flag
+        //if flag is up, we move platform to targetPositionX 
+        public void CalcCollisionPosition()
+        {
+            // hit position at Y 20 + platform.height
+            // use current position and velocity to estimate (X, 20 + platform.height)
+            Vector2 estPosition = ball.Position;
+            //total distance ball needs to move on vertial
+            float temp = ball.Position.Y - 20 - platform_remote.Dimension.Y;
+            //which takes how many updates (vertical speed, 10 per update)
+            temp = temp / 10;
+            //apply to harizontal, this coordinates is likely outside of windows
+            estPosition.X = estPosition.X + ball.Velocity.X * temp;
+            estPosition.Y = 20 + platform_remote.Dimension.Y;
+
+            int windowWidth = (int)ScreenManager.Instance.Dimensions.X;
+            int windowHeight = (int)ScreenManager.Instance.Dimensions.Y;
+
+            //search for estimate postion 
+            while (true)
+            {
+                if (estPosition.X >= 0 && estPosition.X <= windowWidth) //we got a collision point in window
+                {
+                    targetPositionX = estPosition.X;
+                    //we have worked out a position
+                    //now require to move
+                    movePlatformRemote = true;
+                    break;
+                }
+                else if (estPosition.X > windowWidth) //ball hits right windows border
+                /*
+                 * note 
+                 * casuing imperfect 
+                 * waiting to be further investigated 
+                 * 
+                 * ## has a temporal fix
+                 */
+                {
+                    //esti pos - (distance to hit right window)
+                    //distance left after ball hit right window border
+                    //reverse direction
+                    //estPosition.X = windowWidth - ball.Origin.X - (estPosition.X - (windowWidth - ball.Origin.X - ball.Position.X));
+
+                    /*  
+                     * explain of subtract 100 in fomular below
+                     * I currently have no idea why the estimated position is worng
+                     * but it appears everytime the ball hits right window border
+                     * my estimation position shifts to right by 100 from real position
+                     */
+
+                    estPosition.X = windowWidth + windowWidth - estPosition.X - 100;
+                    //estPosition.X = windowWidth - ball.Origin.X - estPosition.X + windowWidth - ball.Origin.X - ball.Position.X;
+                }
+                else if (estPosition.X < 0)
+                {
+                    //total distance - distance to hit window bounds
+                    //ball.Position.X - estPosition.X - ball.Position.X + ball.Origin.X
+                    //turn remaining distance to positive number
+                    estPosition.X = Math.Abs(estPosition.X);
+                }
+            }
+        }
+
+        //move com platform to where ball lands on top of screen
+        //this method serves both move to right positio and move to wrong position
+        //which uses targetPositionX and targetWrongX
+        //boolean controller are
+        //bool movePlatformCom and bool moveComPlatformWrong
+        //send flag 1 for movePlatformCom
+        //send flag 2 for moveComPlatfromWrong
+        //private void MoveComPlatform(float target, int flag)
+        //{
+        //    //we are at right position, stop moving
+        //    if (target >= platform_com.Position.X + platform_com.Dimension.X / 5 * 2 && target <= platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
+        //    {
+        //        switch(flag)
+        //        {
+        //            case 1: 
+        //                movePlatformCom = false;
+        //                break;
+        //            case 2:
+        //                moveComPlatformWrong = false;
+        //                break;
+        //            case 3:
+        //                veryhardMove = false;
+        //                break;
+        //            case 4:
+        //                veryhardMoveToCenter = false;
+        //                checkMoveCenter = false;
+        //                break;
+        //        }        
+        //    }
+        //    else if (target < platform_com.Position.X + platform_com.Dimension.X / 5 * 2)
+        //        platform_com.Position = new Vector2(platform_com.Position.X - platform_com.MoveSpeed, platform_com.Position.Y);
+        //    else if (target > platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
+        //        platform_com.Position = new Vector2(platform_com.Position.X + platform_com.MoveSpeed, platform_com.Position.Y);
+        //}
+
+        
         #endregion
+
         /************************************/
         /**********test functions************/
         /***********delete later*************/
