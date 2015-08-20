@@ -154,10 +154,9 @@ namespace XNAServerClient
                 get { return windEdg; }
                 set { windEdg = value; }
             }
-
-            statePack currentState;
         }
-        
+
+        statePack currentState;
         /*******************************************/
         /*all variables defined beliw are temproral*/
         /*******************************************/
