@@ -794,6 +794,13 @@ namespace XNAServerClient
                         ScreenManager.Instance.Dimensions.Y / 2),
                     Color.White);
 
+            spriteBatch.DrawString(font, testStr,
+                    new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString(testStr).X / 2,
+                        ScreenManager.Instance.Dimensions.Y / 2),
+                    Color.White);
+            if (testStr != "")
+                Console.WriteLine(testStr);
+
             //because draw method is called 60 times pre second
             //therefor to can use this feature as a clock
             //to generate periodic lag
