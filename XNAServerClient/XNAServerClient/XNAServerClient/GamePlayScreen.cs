@@ -176,6 +176,7 @@ namespace XNAServerClient
         /*all variables defined beliw are temproral*/
         /*******************************************/
         string testStr = "";
+        string testStr2 = "";
         
 
         #endregion
@@ -505,7 +506,7 @@ namespace XNAServerClient
                     moveRemoteWrong = false;
                     targetWrongX = 0f;
                 }
-                testStr += "Down ";
+                testStr2 = "Down ";
             }
             else if (!isServer && !ballFlyingUp && ball.Velocity.Y < 0)
             {
@@ -516,7 +517,7 @@ namespace XNAServerClient
                     hasPrediCenter = false;
                     movePlatformRemoteCenter = false;
                 }
-                testStr += "Up ";
+                testStr2 = "Up ";
             }
 
             //After we have updated all state
@@ -896,6 +897,11 @@ namespace XNAServerClient
             spriteBatch.DrawString(font, testStr,
                     new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Player_Control Ping_").X / 2,
                         ScreenManager.Instance.Dimensions.Y / 2),
+                    Color.White);
+
+            spriteBatch.DrawString(font, testStr2,
+                    new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Down ").X / 2,
+                        ScreenManager.Instance.Dimensions.Y / 2 + 30),
                     Color.White);
             if (testStr != "")
                 Console.WriteLine(testStr);
