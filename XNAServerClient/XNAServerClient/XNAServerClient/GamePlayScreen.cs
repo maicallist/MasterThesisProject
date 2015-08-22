@@ -479,6 +479,7 @@ namespace XNAServerClient
             //update remote platform
             //if (lagCompen == LagCompensation.DeadReckoning)
                 DeadReckoning();
+
             //when we update platform_remote info
             //we now have to check whether AI controls the platform
             //if so, in platform.cs, disable player control
@@ -700,7 +701,7 @@ namespace XNAServerClient
                 if (lagIndicator)
                     randomLag = rnd.Next(450, 1001);
                 else
-                    randomLag = 10;
+                    randomLag = 0;
                 //else
                 //    randomLag = rnd.Next(0, 2);
 
@@ -734,8 +735,8 @@ namespace XNAServerClient
                     tellClientLag('n');
                 }
                 //apply lag
-                //TimeSpan lagh = new TimeSpan(0, 0, 0, 0, randomLag);
-                //session.SimulatedLatency = lagh;
+                TimeSpan lagh = new TimeSpan(0, 0, 0, 0, randomLag);
+                session.SimulatedLatency = lagh;
                 //in this block we generate latency
                 //if we are host 
                 //first send a 'l' char
@@ -895,8 +896,6 @@ namespace XNAServerClient
                     new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Down ").X / 2,
                         ScreenManager.Instance.Dimensions.Y / 2 + 30),
                     Color.White);
-            if (testStr != "")
-                Console.WriteLine(testStr);
 
             //because draw method is called 60 times pre second
             //therefor to can use this feature as a clock
