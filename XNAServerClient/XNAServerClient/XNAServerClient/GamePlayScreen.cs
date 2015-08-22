@@ -1808,7 +1808,10 @@ namespace XNAServerClient
             //havlve remaining timer, 
             //that is the distance we are going to move
             //to wrong direction
-            moveWrongTimer /= 2;
+
+            moveWrongTimer /= 3;
+            //moveWrongTimer /= 2;
+           
             //see collision detection
             //i believe due to 
             //CD is not well written, we need extra 190 distance
