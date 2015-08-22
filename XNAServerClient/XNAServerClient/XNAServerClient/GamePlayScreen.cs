@@ -749,7 +749,7 @@ namespace XNAServerClient
                 //therefore it is important that
                 //test subjects only play on client machine
 
-                testStr += "Ping_" + randomLag + " ";
+                testStr += "Ping_" + session.SimulatedLatency + " ";
             }
 
             if (session != null)
