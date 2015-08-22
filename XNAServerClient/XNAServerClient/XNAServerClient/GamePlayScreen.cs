@@ -507,7 +507,6 @@ namespace XNAServerClient
                     moveRemoteWrong = false;
                     targetWrongX = 0f;
                 }
-                testStr2 = "Down ";
             }
             else if (!isServer && !ballFlyingUp && ball.Velocity.Y < 0)
             {
@@ -519,7 +518,6 @@ namespace XNAServerClient
                     hasPrediCenter = false;
                     movePlatformRemoteCenter = false;
                 }
-                testStr2 = "Up ";
             }
 
             //After we have updated all state
@@ -599,10 +597,12 @@ namespace XNAServerClient
                     //we move platform
                     if (movePlatformRemote && hasPrediCatch)
                     {
+                        testStr2 = "Moving";
                         MoveRemotePlatform(targetPositionX, 1);
                     }
-                    else if (movePlatformRemoteCenter && hasPrediCenter)
+                    else if (hasPrediCenter)
                     {
+                        testStr2 = "Backing";
                         MoveRemotePlatform(ScreenManager.Instance.Dimensions.X/2, 3);
                     }
                     
@@ -1607,7 +1607,7 @@ namespace XNAServerClient
             db = db * -0.779862391 + vel * 5.494813831 + state.bPos.X * 0.128871623
                 + state.pPos.X * -0.11275278 + 654.4130811;
 
-            if (Math.Abs(db - state.bPos.Y) <= 3 || state.bPos.Y < 300)
+            if (Math.Abs(db - state.bPos.Y) <= 3 || state.bPos.Y < 400)
                 hasPrediCenter = true;
         }
 
