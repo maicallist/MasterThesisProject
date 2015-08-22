@@ -104,7 +104,6 @@ namespace XNAServerClient
         bool calcCollisionPos;
         bool movePlatformRemote;
 
-        bool movePlatformRemoteCenter;
         //X coordinate where AI needs to move
         float targetPositionX;
 
@@ -112,6 +111,8 @@ namespace XNAServerClient
         bool checkMoveWrong;
         bool moveRemoteWrong;
         float targetWrongX;
+
+        int moveWrongTimer;
 
         //because ball true state is the host state
         //so sometimes client may see 
@@ -124,6 +125,7 @@ namespace XNAServerClient
         //in next update
         bool ballFlyingUp;
 
+        Random rnd;
         //4th
         Vector2 windowEdge;
         //following data type used
@@ -252,12 +254,12 @@ namespace XNAServerClient
 
             calcCollisionPos = false;
             movePlatformRemote = false;
-            movePlatformRemoteCenter = false;
             targetPositionX = 0f;
 
             checkMoveWrong = false;
             moveRemoteWrong = false;
             targetWrongX = 0f;
+            rnd = new Random();
         }
 
         public override void UnloadContent()
@@ -517,7 +519,6 @@ namespace XNAServerClient
                 {
                     checkMoveWrong = false;
                     hasPrediCenter = false;
-                    movePlatformRemoteCenter = false;
                 }
             }
 
@@ -544,8 +545,8 @@ namespace XNAServerClient
                 hasPrediCatch = false;
                 movePlatformRemote = false;
                 hasPrediCenter = false;
-                movePlatformRemoteCenter = false;
                 targetPositionX = 0f;
+                checkMoveWrong = false;
                 targetWrongX = 0f;
                 windowEdge = new Vector2(0, 0);
 
@@ -606,7 +607,6 @@ namespace XNAServerClient
                         testStr2 = "Backing";
                         MoveRemotePlatform(ScreenManager.Instance.Dimensions.X/2, 3);
                     }
-                    
                 }
                 else if (lagCompen == LagCompensation.EH_AI)
                 {
@@ -619,13 +619,27 @@ namespace XNAServerClient
                     
                     //move to wrongx first
                     if (movePlatformRemote && moveRemoteWrong)
-                    { 
-                    
+                    {
+                        int num = rnd.Next(1, 101);
+                        if (num < 95)
+                        {
+                            MoveRemotePlatform(targetWrongX, 2);
+                            moveWrongTimer--;
+                        }
+                        else
+                        {
+                            moveRemoteWrong = false;
+                            moveWrongTimer = 0;
+                        }
+                    }
+                    else if (!moveRemoteWrong && moveWrongTimer > 0)
+                    {
+                        moveWrongTimer--;
                     }
                     //move to collision position
-                    else if (movePlatformRemote && !moveRemoteWrong)
-                    { 
-                    
+                    else if (movePlatformRemote && !moveRemoteWrong && moveWrongTimer <= 0)
+                    {
+                        MoveRemotePlatform(targetPositionX, 1);
                     }
                 }
             }
@@ -1727,7 +1741,6 @@ namespace XNAServerClient
                         moveRemoteWrong = false;
                         break;
                     case 3:
-                        movePlatformRemoteCenter = false;
                         break;
                 }
             }
@@ -1767,68 +1780,67 @@ namespace XNAServerClient
         //and start moving to the right collision position
         private void CalcRemoteWrongPosition()
         {
-            ////work out how much distance we need to move
-            ////from current position to collision position
-            //float trueDistance = 0;
-            //if (targetPositionX > platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
-            //    trueDistance = targetPositionX - platform_com.Position.X - platform_com.Dimension.X / 5 * 3;
-            //else if (targetPositionX < platform_com.Position.X + platform_com.Dimension.X / 5 * 2)
-            //    trueDistance = platform_com.Position.X + platform_com.Dimension.X / 5 * 2 - targetPositionX;
-            ////convert distance to how many updates 
-            ////platform move speed is 10f
-            //int tmp = (int)Math.Ceiling(trueDistance / 10);
-            ////figure out how many updates are there before collision
-            ///*
-            // * MSDN exmaple of Math.Ceiling(double)
-            // * The example displays the following output to the console: 
-            // * Value          Ceiling          Floor 
-            // *  7.03                8              7 
-            // *  7.64                8              7 
-            // *  0.12                1              0 
-            // *  -7.1               -7             -8 
-            // *  
-            // * why it returns a double? hmm..
-            // */
-            ////work out how many updates before collision
-            //moveWrongTimer = (int)Math.Ceiling((ball.Position.Y - 45) / 10);
-            //moveWrongTimer -= tmp;
-            ////havlve remaining timer, 
-            ////that is the distance we are going to move
-            ////to wrong direction
-            //moveWrongTimer /= 2;
-            ////see collision detection
-            ////i believe due to 
-            ////CD is not well written, we need extra 190 distance
-            ////to ensure platform will miss the ball
-            ////but it appears this offset has 
-            ////impact on AI
-            ////which causes it catches ball for few rounds
-            ////and often misses ball at round 2, 7 and 11
+            //work out how much distance we need to move
+            //from current position to collision position
+            float trueDistance = 0;
+            if (targetPositionX > platform_remote.Position.X + platform_remote.Dimension.X / 5 * 3)
+                trueDistance = targetPositionX - platform_remote.Position.X - platform_remote.Dimension.X / 5 * 3;
+            else if (targetPositionX < platform_remote.Position.X + platform_remote.Dimension.X / 5 * 2)
+                trueDistance = platform_remote.Position.X + platform_remote.Dimension.X / 5 * 2 - targetPositionX;
+            //convert distance to how many updates 
+            //platform move speed is 10f
+            int tmp = (int)Math.Ceiling(trueDistance / 10);
+            //figure out how many updates are there before collision
+            /*
+             * MSDN exmaple of Math.Ceiling(double)
+             * The example displays the following output to the console: 
+             * Value          Ceiling          Floor 
+             *  7.03                8              7 
+             *  7.64                8              7 
+             *  0.12                1              0 
+             *  -7.1               -7             -8 
+             *  
+             * why it returns a double? hmm..
+             */
+            //work out how many updates before collision
+            moveWrongTimer = (int)Math.Ceiling((ball.Position.Y - 45) / 10);
+            moveWrongTimer -= tmp;
+            //havlve remaining timer, 
+            //that is the distance we are going to move
+            //to wrong direction
+            moveWrongTimer /= 2;
+            //see collision detection
+            //i believe due to 
+            //CD is not well written, we need extra 190 distance
+            //to ensure platform will miss the ball
+            //but it appears this offset has 
+            //impact on AI
+            //which causes it catches ball for few rounds
+            //and often misses ball at round 2, 7 and 11
 
-            ////temporal fix
-            //moveWrongTimer += rnd.Next(17, 20);
+            //temporal fix
+            moveWrongTimer += rnd.Next(17, 20);
 
-            ////move to a wrong position
-            //if (targetPositionX > platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
-            //{
-            //    //move to left (wrong direction)
-            //    targetWrongX = platform_com.Position.X + platform_com.Dimension.X / 5 * 2
-            //        - moveWrongTimer * 10;
-            //    if (targetWrongX < platform_com.Dimension.X / 5 * 2)
-            //        targetWrongX = platform_com.Dimension.X / 5 * 2;
-            //}
-            //else if (targetPositionX < platform_com.Position.X + platform_com.Dimension.X / 5 * 2)
-            //{
-            //    //move to right (wrong direction)
-            //    targetWrongX = platform_com.Position.X + platform_com.Dimension.X / 5 * 3
-            //        + moveWrongTimer * 10;
-            //    if (targetWrongX > ScreenManager.Instance.Dimensions.X
-            //        - platform_com.Dimension.X / 5 * 2)
-            //        targetWrongX = ScreenManager.Instance.Dimensions.X
-            //            - platform_com.Dimension.X / 5 * 2;
-            //}
-
-            //moveRemoteWrong = true;
+            //move to a wrong position
+            if (targetPositionX > platform_remote.Position.X + platform_remote.Dimension.X / 5 * 3)
+            {
+                //move to left (wrong direction)
+                targetWrongX = platform_remote.Position.X + platform_remote.Dimension.X / 5 * 2
+                    - moveWrongTimer * 10;
+                if (targetWrongX < platform_remote.Dimension.X / 5 * 2)
+                    targetWrongX = platform_remote.Dimension.X / 5 * 2;
+            }
+            else if (targetPositionX < platform_remote.Position.X + platform_remote.Dimension.X / 5 * 2)
+            {
+                //move to right (wrong direction)
+                targetWrongX = platform_remote.Position.X + platform_remote.Dimension.X / 5 * 3
+                    + moveWrongTimer * 10;
+                if (targetWrongX > ScreenManager.Instance.Dimensions.X
+                    - platform_remote.Dimension.X / 5 * 2)
+                    targetWrongX = ScreenManager.Instance.Dimensions.X
+                        - platform_remote.Dimension.X / 5 * 2;
+            }
+            moveRemoteWrong = true;
         }
 
 
