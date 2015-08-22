@@ -65,7 +65,8 @@ namespace XNAServerClient
         //decide when to send packet
         bool sendPacket;
         //lag compensation algorithm
-        enum LagCompensation { None, DeadReckoning, PlayPattern }
+        //EH_AI see single player mode, extreme hard level
+        enum LagCompensation { None, DeadReckoning, PlayPattern, EH_AI}
         LagCompensation lagCompen;
         bool lagFlag;
 
@@ -93,11 +94,6 @@ namespace XNAServerClient
         //local start time
         static long initLagInMillisec;
 
-        //test periodic lag
-        enum Diffculty { Prediction, ExtremeHard }
-
-        Diffculty AIMode = Diffculty.Prediction;
-
         int lagCounter;
         bool lagIndicator;
         bool AIControl;
@@ -105,9 +101,31 @@ namespace XNAServerClient
         bool hasPrediCatch;
         bool hasPrediCenter;
 
+        bool calcCollisionPos;
         bool movePlatformRemote;
+
+        bool movePlatformRemoteCenter;
         //X coordinate where AI needs to move
         float targetPositionX;
+        //when ball fly to local platform
+        //we move remote platform back to center of the screen
+        float targetCenterX;
+
+        //extreme hard level in single player mode
+        bool checkMoveWrong;
+        bool moveRemoteWrong;
+        float targetWrongX;
+
+        //because ball true state is the host state
+        //so sometimes client may see 
+        //ball is bounced back 
+        //without collision
+        
+        //we use following bool
+        //record current update state
+        //and check this variable 
+        //in next update
+        bool ballFlyingUp;
 
         //4th
         Vector2 windowEdge;
@@ -207,12 +225,13 @@ namespace XNAServerClient
             lagCompen = LagCompensation.PlayPattern;
             lagFlag = false;
 
+            DRTestMode = false;
+
             //record dead reckoning
             //make below true if you want to record DR data
             //remember change latency generator
             //apply it to client side
             // !isServer in if condition
-            DRTestMode = false;
 
             deadMoving = false;
             clientSide = new ArrayList();
@@ -233,8 +252,15 @@ namespace XNAServerClient
             hasPrediCenter = false;
             windowEdge = new Vector2(0, 0);
 
+            calcCollisionPos = false;
             movePlatformRemote = false;
+            movePlatformRemoteCenter = false;
             targetPositionX = 0f;
+            targetCenterX = 0f;
+
+            checkMoveWrong = false;
+            moveRemoteWrong = false;
+            targetWrongX = 0f;
         }
 
         public override void UnloadContent()
@@ -422,7 +448,6 @@ namespace XNAServerClient
             //ball collade with plaform_player
             if (ballRect.Intersects(platformRect_remote))
             {
-                windowEdge = new Vector2(0, 0);
                 //check pixel collision
                 if (UpdateCollision(ballRect, ballColor, platformRect_remote, platformColor_remote))
                 {
@@ -462,6 +487,41 @@ namespace XNAServerClient
             //if so, in platform.cs, disable player control
             platform_remote.Update(gameTime);
             
+            //update ballFlyingUp used in AI
+            if (!isServer && ballFlyingUp && ball.Velocity.Y > 0)
+            {
+                //in last update, ball was going up
+                //but now ball is going down
+                ballFlyingUp = false;
+                
+                //when ball is flying to remote platform
+                //we need to calculate Collision
+                //
+                windowEdge = new Vector2(0, 0);
+                if (AIControl)
+                {
+                    calcCollisionPos = false;
+                    hasPrediCatch = false;
+                    movePlatformRemote = false;
+                    targetPositionX = 0f;
+
+                    checkMoveWrong = false;
+                    moveRemoteWrong = false;
+                    targetWrongX = 0f;
+                }
+            }
+            else if (!isServer && !ballFlyingUp && ball.Velocity.Y < 0)
+            {
+                ballFlyingUp = true;
+
+                if (AIControl)
+                {
+                    hasPrediCenter = false;
+                    movePlatformRemoteCenter = false;
+                    targetCenterX = 0f;
+                }
+            }
+
             //After we have updated all state
             //let's check current state
             //to enable AI controls
@@ -479,16 +539,37 @@ namespace XNAServerClient
             if (lagFlag && !AIControl && !isServer)
             {
                 testStr += "Prestate_check ";
+
+                //reset all flags
+                calcCollisionPos = false;
+                hasPrediCatch = false;
+                movePlatformRemote = false;
+                hasPrediCenter = false;
+                movePlatformRemoteCenter = false;
+                targetPositionX = 0f;
+                targetCenterX = 0f;
+                targetWrongX = 0f;
+                windowEdge = new Vector2(0, 0);
+
                 //if ball is flying to platform_remote
                 if (ball.Velocity.Y < 0)
                 {
                     testStr += "Moving Up ";
+                    CalcCollisionPosition();
                 }
                 else//if ball is flying away from platform_remote
                 {
                     testStr += "Moving Down ";
+                    //if ball is flying away from
+                    //remote platform
+                    //we don't need to calculate anything
+                    //so just flag up
+                    movePlatformRemoteCenter = true;
+
+                    //one flag is up, if our prediction
+                    //model up the other flag(hasPrediCenter)
+                    //we can move the platform
                 }
-                
                 //tell AI start playing the remote platfrom
                 AIControl = true;
             }
@@ -500,25 +581,63 @@ namespace XNAServerClient
             if (lagFlag && AIControl && !isServer)
             {
                 testStr += "AI_control ";
-                //if we know where we need to move
-                //just move it
-                if (movePlatformRemote)
+                if (lagCompen == LagCompensation.PlayPattern)
                 {
+                    //if ball is flying  towards 
+                    //the remote platform
+                    //& we still don't have
+                    //the prediction - then predict
+                    currentState = new statePack(ball.Velocity, ball.Position,
+                        platform_remote.Position, windowEdge);
+                    if (ball.Velocity.Y < 0 && !hasPrediCatch)
+                    {
+                        doPrediction(currentState);
+                    }
+                    //if ball is flying to local
+                    //and we haven't got center prediction
+                    else if (ball.Velocity.Y > 0 && !hasPrediCenter)
+                    {
+                        doPrediction_MoveToCenter(currentState);
+                    }
 
+                    //if we know where we need to move
+                    //just move it
+
+                    //after we know where collision position is
+                    //we set movePlatformRemote true
+                    //but we still need to keep checking
+                    //our prediction model
+                    //if our model comes back with a match
+                    //we move platform
+                    if (movePlatformRemote && hasPrediCatch)
+                    {
+                        MoveRemotePlatform(targetPositionX, 1);
+                    }
+                    else if (movePlatformRemoteCenter && hasPrediCenter)
+                    {
+                        MoveRemotePlatform(targetCenterX, 3);
+                    }
+                    
                 }
-                //if ball is flying  towards 
-                //the remote platform
-                //& we still don't have
-                //the prediction - then predict
-                else if (ball.Velocity.Y < 0 && !hasPrediCatch)
+                else if (lagCompen == LagCompensation.EH_AI)
                 {
-
-                }
-                //if ball is flying to local
-                //and we haven't got center prediction
-                else if (ball.Velocity.Y > 0 && hasPrediCenter)
-                {
-
+                    //calc wrong x
+                    if (checkMoveWrong == false)
+                    {
+                        CalcRemoteWrongPosition();
+                        checkMoveWrong = true;
+                    }
+                    
+                    //move to wrongx first
+                    if (movePlatformRemote && moveRemoteWrong)
+                    { 
+                    
+                    }
+                    //move to collision position
+                    else if (movePlatformRemote && !moveRemoteWrong)
+                    { 
+                    
+                    }
                 }
             }
             else
@@ -591,9 +710,9 @@ namespace XNAServerClient
                 int randomLag;
                 
                 if (lagIndicator)
-                    randomLag = rnd.Next(400, 1001);
+                    randomLag = rnd.Next(450, 1001);
                 else
-                    randomLag = rnd.Next(0, 201);
+                    randomLag = rnd.Next(0, 51);
 
                 //at here, we check how lag we are
                 //if lag is high enough
@@ -685,23 +804,8 @@ namespace XNAServerClient
             //because we are implementing a P2P game(not entirely)
             //therefore we only check ball position at local platform side
             //and let remote player update ball position at remote platform side
-            //if (gameStart && !gameEnd && isServer)
-            //{
-            //    //800 - 755 (top side of platform) to 800 - 780
-            //    if (ball.Position.Y + ball.ImageHeight >=
-            //        ScreenManager.Instance.Dimensions.Y - 20
-            //        || ball.Position.Y <= 20)
-            //    {
-            //        gameEnd = true;
-            //        foreach (LocalNetworkGamer gamer in session.LocalGamers)
-            //        {
-            //            //tell all remote gamer to end game
-            //            packetWriter.Write('e');
-            //            // Send it to all remote gamers.
-            //            gamer.SendData(packetWriter, SendDataOptions.InOrder);
-            //        }
-            //    }
-            //}
+            
+
         }
 
         public override void Draw(SpriteBatch spriteBatch)
@@ -794,7 +898,7 @@ namespace XNAServerClient
                     Color.White);
 
             spriteBatch.DrawString(font, testStr,
-                    new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString(testStr).X / 2,
+                    new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Player_Control Ping_").X / 2,
                         ScreenManager.Instance.Dimensions.Y / 2),
                     Color.White);
             if (testStr != "")
@@ -1428,9 +1532,32 @@ namespace XNAServerClient
         //following method can predict 
         //when to move platform 
         //while ball is flying to platform_remote
-        public void Prediction_Catch()
-        { 
-            
+        public void doPrediction(statePack state)
+        {
+            state = invertPosition(state);
+
+            //calc distance from patform to ball
+            double db = Math.Pow(state.bPos.X - state.pPos.X, 2)
+                + Math.Pow(state.bPos.Y - state.pPos.Y, 2);
+            db = Math.Sqrt(db);
+
+            double result;
+            //check 3rd model
+            result = predict_disToPlatform(db, (int)state.bVel.X, (int)state.bPos.X, (int)state.pPos.X);
+            if (Math.Abs(result - state.bPos.Y) <= 3 && !hasPrediCatch)
+                hasPrediCatch = true;
+
+            //check 4th model
+            result = predict_disToPlatform(db, (int)state.bVel.X, (int)state.bPos.X,
+                (int)state.pPos.X, (int)state.wEdg.Y);
+            if (Math.Abs(result - state.bPos.Y) <= 3 && !hasPrediCatch)
+                hasPrediCatch = true;
+            //fail safe
+            //sometimes prediction model 
+            //cannot give us the result
+            //force AI moves the platform
+            if (state.bPos.Y >= 550)
+                hasPrediCatch = true;
         }
 
 
@@ -1472,9 +1599,9 @@ namespace XNAServerClient
 
         //we first reverse position for com
         //and apply our prediction model
-        private void doPrediction_VeryHardMoveToCenter(statePack state)
+        private void doPrediction_MoveToCenter(statePack state)
         {
-            state = reversePosition(state);
+            state = invertPosition(state);
             //calc distance first
             double db = Math.Pow(state.bPos.X - state.pPos.X, 2)
                 + Math.Pow(state.bPos.Y - state.pPos.Y, 2);
@@ -1487,23 +1614,26 @@ namespace XNAServerClient
                 + state.pPos.X * -0.11275278 + 654.4130811;
 
             if (Math.Abs(db - state.bPos.Y) <= 3 || state.bPos.Y < 300)
-                movePlatformRemote = true;
+                movePlatformRemoteCenter = true;
         }
 
-        //for very hard AI
         //the player profile we use
-        //which our prediction model is based on 
+        //our prediction model is based on 
         //single player mode which player is at bottom
         //thus, we need to reverse position
         //so prediction can be used for 
-        //com platform (at top of screen)
-        private statePack reversePosition(statePack state)
+        //remote platform (at top of screen)
+        private statePack invertPosition(statePack state)
         {
             // 0 to 580 screen width
             float screenWidth = ScreenManager.Instance.Dimensions.X;
             float screenHeight = ScreenManager.Instance.Dimensions.Y;
             state.bVel = new Vector2(state.bVel.X * -1, state.bVel.Y * -1);
             state.bPos = new Vector2(screenWidth - state.bPos.X, screenHeight - state.bPos.Y);
+            //top platform y = 20, height 25
+            //bot platform y = 755
+            //thus ball to top platform : ball.y - 45
+            //invert position : 755 - ball + 45
             state.pPos = new Vector2(screenWidth - state.pPos.X, screenHeight - state.pPos.Y);
             state.wEdg = new Vector2(screenWidth - state.wEdg.X, screenHeight - state.wEdg.Y);
 
@@ -1543,7 +1673,8 @@ namespace XNAServerClient
                 {
                     targetPositionX = estPosition.X;
                     //we have worked out a position
-                    //now require to move
+                    //now request to move
+                    //flag up 
                     movePlatformRemote = true;
                     break;
                 }
@@ -1588,35 +1719,125 @@ namespace XNAServerClient
         //bool movePlatformCom and bool moveComPlatformWrong
         //send flag 1 for movePlatformCom
         //send flag 2 for moveComPlatfromWrong
-        //private void MoveComPlatform(float target, int flag)
-        //{
-        //    //we are at right position, stop moving
-        //    if (target >= platform_com.Position.X + platform_com.Dimension.X / 5 * 2 && target <= platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
-        //    {
-        //        switch(flag)
-        //        {
-        //            case 1: 
-        //                movePlatformCom = false;
-        //                break;
-        //            case 2:
-        //                moveComPlatformWrong = false;
-        //                break;
-        //            case 3:
-        //                veryhardMove = false;
-        //                break;
-        //            case 4:
-        //                veryhardMoveToCenter = false;
-        //                checkMoveCenter = false;
-        //                break;
-        //        }        
-        //    }
-        //    else if (target < platform_com.Position.X + platform_com.Dimension.X / 5 * 2)
-        //        platform_com.Position = new Vector2(platform_com.Position.X - platform_com.MoveSpeed, platform_com.Position.Y);
-        //    else if (target > platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
-        //        platform_com.Position = new Vector2(platform_com.Position.X + platform_com.MoveSpeed, platform_com.Position.Y);
-        //}
+        private void MoveRemotePlatform(float target, int flag)
+        {
+            //we are at right position, stop moving
+            if (target >= platform_remote.Position.X + platform_remote.Dimension.X / 5 * 2 && target <= platform_remote.Position.X + platform_remote.Dimension.X / 5 * 3)
+            {
+                switch (flag)
+                {
+                    case 1:
+                        movePlatformRemote = false;
+                        break;
+                    case 2:
+                        moveRemoteWrong = false;
+                        break;
+                    case 3:
+                        movePlatformRemoteCenter = false;
+                        break;
+                }
+            }
+            else if (target < platform_remote.Position.X + platform_remote.Dimension.X / 5 * 2)
+                platform_remote.Position = new Vector2(platform_remote.Position.X - platform_remote.MoveSpeed, platform_remote.Position.Y);
+            else if (target > platform_remote.Position.X + platform_remote.Dimension.X / 5 * 3)
+                platform_remote.Position = new Vector2(platform_remote.Position.X + platform_remote.MoveSpeed, platform_remote.Position.Y);
+        }
 
-        
+        //when this method is called
+        //we have already work out the right targetPositionX
+        //we now need to move platform_com to wrong direction
+        //then move it to targetPositionX
+        //So it can miss the ball
+
+        //two ways
+        //make platform stop at a wrong position for sometime
+        //or
+        //make platform keep moving to wrong direction
+        //until there is not enough time for it gets to right position
+        //
+        //note the 2nd way
+        //that position may be outside of our screen
+
+        //so..let's get this done
+
+        //this method is called in extreme hard mode
+        //every time when com platform receives movePlatformCom flag
+        //AI first calculates a worng position in wrong direction
+        //if com platform successfully reaches this wrong position
+        //then it will miss ball on its way back to right collision position
+
+        //during moving to wrong position
+        //in every update we generate a random number
+        //if the number is in range, we keep moving
+        //otherwise we abort moving to wrong position
+        //and start moving to the right collision position
+        private void CalcRemoteWrongPosition()
+        {
+            ////work out how much distance we need to move
+            ////from current position to collision position
+            //float trueDistance = 0;
+            //if (targetPositionX > platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
+            //    trueDistance = targetPositionX - platform_com.Position.X - platform_com.Dimension.X / 5 * 3;
+            //else if (targetPositionX < platform_com.Position.X + platform_com.Dimension.X / 5 * 2)
+            //    trueDistance = platform_com.Position.X + platform_com.Dimension.X / 5 * 2 - targetPositionX;
+            ////convert distance to how many updates 
+            ////platform move speed is 10f
+            //int tmp = (int)Math.Ceiling(trueDistance / 10);
+            ////figure out how many updates are there before collision
+            ///*
+            // * MSDN exmaple of Math.Ceiling(double)
+            // * The example displays the following output to the console: 
+            // * Value          Ceiling          Floor 
+            // *  7.03                8              7 
+            // *  7.64                8              7 
+            // *  0.12                1              0 
+            // *  -7.1               -7             -8 
+            // *  
+            // * why it returns a double? hmm..
+            // */
+            ////work out how many updates before collision
+            //moveWrongTimer = (int)Math.Ceiling((ball.Position.Y - 45) / 10);
+            //moveWrongTimer -= tmp;
+            ////havlve remaining timer, 
+            ////that is the distance we are going to move
+            ////to wrong direction
+            //moveWrongTimer /= 2;
+            ////see collision detection
+            ////i believe due to 
+            ////CD is not well written, we need extra 190 distance
+            ////to ensure platform will miss the ball
+            ////but it appears this offset has 
+            ////impact on AI
+            ////which causes it catches ball for few rounds
+            ////and often misses ball at round 2, 7 and 11
+
+            ////temporal fix
+            //moveWrongTimer += rnd.Next(17, 20);
+
+            ////move to a wrong position
+            //if (targetPositionX > platform_com.Position.X + platform_com.Dimension.X / 5 * 3)
+            //{
+            //    //move to left (wrong direction)
+            //    targetWrongX = platform_com.Position.X + platform_com.Dimension.X / 5 * 2
+            //        - moveWrongTimer * 10;
+            //    if (targetWrongX < platform_com.Dimension.X / 5 * 2)
+            //        targetWrongX = platform_com.Dimension.X / 5 * 2;
+            //}
+            //else if (targetPositionX < platform_com.Position.X + platform_com.Dimension.X / 5 * 2)
+            //{
+            //    //move to right (wrong direction)
+            //    targetWrongX = platform_com.Position.X + platform_com.Dimension.X / 5 * 3
+            //        + moveWrongTimer * 10;
+            //    if (targetWrongX > ScreenManager.Instance.Dimensions.X
+            //        - platform_com.Dimension.X / 5 * 2)
+            //        targetWrongX = ScreenManager.Instance.Dimensions.X
+            //            - platform_com.Dimension.X / 5 * 2;
+            //}
+
+            //moveRemoteWrong = true;
+        }
+
+
         #endregion
 
         /************************************/

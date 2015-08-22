@@ -1033,13 +1033,13 @@ namespace XNAServerClient
                 //updatetimes = updatetimes * ball.Velocity.X + ball.Position.X;
                 //double db = Math.Pow(ball.Position.X - updatetimes, 2) + Math.Pow(ball.Position.Y - 700, 2);
                 //db = Math.Sqrt(db);
-
+                double result;
                 //take in singel independent variable
-                db = predict_disToPlatform(db);
+                result = predict_disToPlatform(db);
 
-                if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPrediction_1)
+                if (result > 100 && result < 550 && Math.Abs(ball.Position.Y - result) <= 3 && !hasPrediction_1)
                 {
-                    show_prediction_1st = db;
+                    show_prediction_1st = result;
                     hasPrediction_1 = true;
                 }
 
@@ -1048,22 +1048,22 @@ namespace XNAServerClient
                  * distance between ball and platform 
                  * ball x speed
                  */
-                db = predict_disToPlatform(db, (int)ball.Velocity.X);
+                result = predict_disToPlatform(db, (int)ball.Velocity.X);
 
-                if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPrediction_2)
+                if (result > 100 && result < 550 && Math.Abs(ball.Position.Y - result) <= 3 && !hasPrediction_2)
                 {
-                    show_prediction_2nd = db;
+                    show_prediction_2nd = result;
                     hasPrediction_2 = true;
                 }
 
                 /*
                  * fourh param platfomr x position 
                  */
-                db = predict_disToPlatform(db, (int)ball.Velocity.X, (int)ball.Position.X, (int)platform_player.Position.X);
+                result = predict_disToPlatform(db, (int)ball.Velocity.X, (int)ball.Position.X, (int)platform_player.Position.X);
                 
-                if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPrediction_3)
+                if (result > 100 && result < 550 && Math.Abs(ball.Position.Y - result) <= 3 && !hasPrediction_3)
                 {
-                    show_prediction_3rd = db;
+                    show_prediction_3rd = result;
                     hasPrediction_3 = true;
                 }
 
@@ -1071,12 +1071,12 @@ namespace XNAServerClient
                  * if ball hit window edge once when going down
                  */
                 if (windowEdge.Y != 0)
-                    db = predict_disToPlatform(db, (int)ball.Velocity.X,
+                    result = predict_disToPlatform(db, (int)ball.Velocity.X,
                         (int)ball.Position.X, (int)platform_player.Position.X, (int)windowEdge.X);
                 
-                if (db > 100 && db < 550 && Math.Abs(ball.Position.Y - db) <= 3 && !hasPrediction_4)
+                if (result > 100 && result < 550 && Math.Abs(ball.Position.Y - result) <= 3 && !hasPrediction_4)
                 {
-                    show_prediction_4th = db;
+                    show_prediction_4th = result;
                     hasPrediction_4 = true;
                 }
             }
