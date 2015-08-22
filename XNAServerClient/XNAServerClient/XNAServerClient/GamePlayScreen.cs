@@ -222,7 +222,7 @@ namespace XNAServerClient
 
             sendPacket = true;
 
-            lagCompen = LagCompensation.PlayPattern;
+            lagCompen = LagCompensation.EH_AI;
             lagFlag = false;
 
             DRTestMode = false;
@@ -1819,7 +1819,7 @@ namespace XNAServerClient
             //and often misses ball at round 2, 7 and 11
 
             //temporal fix
-            moveWrongTimer += rnd.Next(17, 20);
+            //moveWrongTimer += rnd.Next(17, 20);
 
             //move to a wrong position
             if (targetPositionX > platform_remote.Position.X + platform_remote.Dimension.X / 5 * 3)
