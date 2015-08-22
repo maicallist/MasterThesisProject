@@ -107,9 +107,6 @@ namespace XNAServerClient
         bool movePlatformRemoteCenter;
         //X coordinate where AI needs to move
         float targetPositionX;
-        //when ball fly to local platform
-        //we move remote platform back to center of the screen
-        float targetCenterX;
 
         //extreme hard level in single player mode
         bool checkMoveWrong;
@@ -256,7 +253,6 @@ namespace XNAServerClient
             movePlatformRemote = false;
             movePlatformRemoteCenter = false;
             targetPositionX = 0f;
-            targetCenterX = 0f;
 
             checkMoveWrong = false;
             moveRemoteWrong = false;
@@ -518,7 +514,6 @@ namespace XNAServerClient
                 {
                     hasPrediCenter = false;
                     movePlatformRemoteCenter = false;
-                    targetCenterX = 0f;
                 }
             }
 
@@ -547,7 +542,6 @@ namespace XNAServerClient
                 hasPrediCenter = false;
                 movePlatformRemoteCenter = false;
                 targetPositionX = 0f;
-                targetCenterX = 0f;
                 targetWrongX = 0f;
                 windowEdge = new Vector2(0, 0);
 
@@ -615,7 +609,7 @@ namespace XNAServerClient
                     }
                     else if (movePlatformRemoteCenter && hasPrediCenter)
                     {
-                        MoveRemotePlatform(targetCenterX, 3);
+                        MoveRemotePlatform(ScreenManager.Instance.Dimensions.X/2, 3);
                     }
                     
                 }
@@ -1614,7 +1608,7 @@ namespace XNAServerClient
                 + state.pPos.X * -0.11275278 + 654.4130811;
 
             if (Math.Abs(db - state.bPos.Y) <= 3 || state.bPos.Y < 300)
-                movePlatformRemoteCenter = true;
+                hasPrediCenter = true;
         }
 
         //the player profile we use
