@@ -699,6 +699,8 @@ namespace XNAServerClient
 
                 if (lagIndicator)
                     randomLag = rnd.Next(450, 1001);
+                else
+                    randomLag = 10;
                 //else
                 //    randomLag = rnd.Next(0, 2);
 
@@ -732,11 +734,8 @@ namespace XNAServerClient
                     tellClientLag('n');
                 }
                 //apply lag
-                if (randomLag >= 450)
-                {
                     TimeSpan lagh = new TimeSpan(0, 0, 0, 0, randomLag);
                     session.SimulatedLatency = lagh;
-                }
                 //in this block we generate latency
                 //if we are host 
                 //first send a 'l' char
