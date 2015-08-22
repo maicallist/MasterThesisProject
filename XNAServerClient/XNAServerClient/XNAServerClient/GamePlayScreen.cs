@@ -505,6 +505,7 @@ namespace XNAServerClient
                     moveRemoteWrong = false;
                     targetWrongX = 0f;
                 }
+                testStr += "Down ";
             }
             else if (!isServer && !ballFlyingUp && ball.Velocity.Y < 0)
             {
@@ -515,6 +516,7 @@ namespace XNAServerClient
                     hasPrediCenter = false;
                     movePlatformRemoteCenter = false;
                 }
+                testStr += "Up ";
             }
 
             //After we have updated all state
@@ -918,7 +920,8 @@ namespace XNAServerClient
                 else if (lagCounter == 0 && !lagIndicator)
                 {
                     lagIndicator = true;
-                    lagCounter = 180;
+                    //lagCounter = 180;
+                    lagCounter = 420;
                 }
             }
         }
