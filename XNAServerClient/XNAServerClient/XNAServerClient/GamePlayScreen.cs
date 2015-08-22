@@ -134,7 +134,7 @@ namespace XNAServerClient
         //because our prediction model is based on 
         //the platform at bottom
         //so we need to convert data for the platform at top
-        struct statePack
+        public struct statePack
         {
             Vector2 ballVel;
             Vector2 ballPos;

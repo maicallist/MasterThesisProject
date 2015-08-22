@@ -46,7 +46,6 @@ E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterT
 E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\Microsoft.Xna.Framework.RuntimeProfile.txt
 E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\XNAServerClient.exe
 E:\Download\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\MasterThesisProject-750de7cbbabf43a83ec6efed1013f6d6f5f3ca90\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\XNAServerClient.pdb
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\Microsoft.Xna.Framework.RuntimeProfile.txt
 D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Load\Ending.cme
 D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Load\Menu.cme
 D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Load\Splash.cme
@@ -66,6 +65,6 @@ D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug
 D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\Content\Splash\image3.png
 D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\XNAServerClient.exe
 D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\bin\x86\Debug\XNAServerClient.pdb
+D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\Microsoft.Xna.Framework.RuntimeProfile.txt
 D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\XNAServerClient.exe
 D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\XNAServerClient.pdb
-D:\C workplace\XNA\XNAServerClient\XNAServerClient\XNAServerClient\obj\x86\Debug\XNAServerClient.csprojResolveAssemblyReference.cache
