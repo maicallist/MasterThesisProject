@@ -698,7 +698,8 @@ namespace XNAServerClient
                 int randomLag = 0;
 
                 if (lagIndicator)
-                    randomLag = rnd.Next(450, 1001);
+                    //randomLag = rnd.Next(450, 1001);
+                    randomLag = 1;
                 else
                     randomLag = 1;
                 //else
