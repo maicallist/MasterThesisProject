@@ -700,7 +700,7 @@ namespace XNAServerClient
                 if (lagIndicator)
                     randomLag = rnd.Next(450, 1001);
                 else
-                    randomLag = rnd.Next(0, 51);
+                    randomLag = rnd.Next(0, 2);
 
                 //at here, we check how lag we are
                 //if lag is high enough
@@ -1650,7 +1650,7 @@ namespace XNAServerClient
             // use current position and velocity to estimate (X, 20 + platform.height)
             Vector2 estPosition = ball.Position;
             //total distance ball needs to move on vertial
-            float temp = ball.Position.Y - 20 - platform_remote.Dimension.Y;
+            float temp = ball.Position.Y - platform_remote.Position.Y - platform_remote.Dimension.Y;
             //which takes how many updates (vertical speed, 10 per update)
             temp = temp / 10;
             //apply to harizontal, this coordinates is likely outside of windows
