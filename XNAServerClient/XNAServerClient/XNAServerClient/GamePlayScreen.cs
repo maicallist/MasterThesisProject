@@ -477,7 +477,7 @@ namespace XNAServerClient
             ball.Update(gameTime);
             platform_local.Update(gameTime);
             //update remote platform
-            if (lagCompen == LagCompensation.DeadReckoning)
+            //if (lagCompen == LagCompensation.DeadReckoning)
                 DeadReckoning();
             //when we update platform_remote info
             //we now have to check whether AI controls the platform
