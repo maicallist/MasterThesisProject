@@ -498,6 +498,7 @@ namespace XNAServerClient
                 if (AIControl)
                 {
                     calcCollisionPos = false;
+                    movePlatformRemote = false;
                     hasPrediCatch = false;
                     movePlatformRemote = false;
                     targetPositionX = 0f;
@@ -514,6 +515,7 @@ namespace XNAServerClient
 
                 if (AIControl)
                 {
+                    checkMoveWrong = false;
                     hasPrediCenter = false;
                     movePlatformRemoteCenter = false;
                 }
@@ -548,25 +550,6 @@ namespace XNAServerClient
                 targetWrongX = 0f;
                 windowEdge = new Vector2(0, 0);
 
-                //if ball is flying to platform_remote
-                if (ball.Velocity.Y < 0)
-                {
-                    testStr += "Moving Up ";
-                    CalcCollisionPosition();
-                }
-                else//if ball is flying away from platform_remote
-                {
-                    testStr += "Moving Down ";
-                    //if ball is flying away from
-                    //remote platform
-                    //we don't need to calculate anything
-                    //so just flag up
-                    movePlatformRemoteCenter = true;
-
-                    //one flag is up, if our prediction
-                    //model up the other flag(hasPrediCenter)
-                    //we can move the platform
-                }
                 //tell AI start playing the remote platfrom
                 AIControl = true;
             }
@@ -578,6 +561,14 @@ namespace XNAServerClient
             if (lagFlag && AIControl && !isServer)
             {
                 testStr += "AI_control ";
+
+                //calculate collision position
+                if (!calcCollisionPos)
+                {
+                    CalcCollisionPosition();
+                    calcCollisionPos = true;
+                }
+
                 if (lagCompen == LagCompensation.PlayPattern)
                 {
                     //if ball is flying  towards 
