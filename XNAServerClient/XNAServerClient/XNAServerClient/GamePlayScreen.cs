@@ -618,7 +618,7 @@ namespace XNAServerClient
                     //move to wrongx first
                     if (movePlatformRemote && moveRemoteWrong)
                     {
-                        testStr2 = "Wrong";
+                        testStr2 = "Wrong : " + moveRemoteWrong + " : " + movePlatformRemote;
                         int num = rnd.Next(1, 101);
                         if (num < 95)
                         {
@@ -638,7 +638,7 @@ namespace XNAServerClient
                     //move to collision position
                     else if (movePlatformRemote && !moveRemoteWrong && moveWrongTimer <= 0)
                     {
-                        testStr2 = "Right";
+                        testStr2 = "Right : " + moveRemoteWrong + " : " + movePlatformRemote;
                         MoveRemotePlatform(targetPositionX, 1);
                     }
                 }
