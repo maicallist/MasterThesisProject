@@ -899,8 +899,9 @@ namespace XNAServerClient
             platform_local.Draw(spriteBatch);
             platform_remote.Draw(spriteBatch);
 
-            if (gameStart && gameEnd)
-                spriteBatch.DrawString(font, "Press Space to Re-Start..",
+            if (!gameStart && !gameEnd 
+                && session.SessionState == NetworkSessionState.Playing)
+                spriteBatch.DrawString(font, "Press Y to Re-Start..",
                     new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Press Space to Re-Start..").X / 2,
                         ScreenManager.Instance.Dimensions.Y / 2),
                     Color.White);
@@ -1423,8 +1424,8 @@ namespace XNAServerClient
                         platform_local.Position = new Vector2(ScreenManager.Instance.Dimensions.X / 2 - platform_local.Dimension.X / 2,
                             ScreenManager.Instance.Dimensions.Y - 20 - platform_local.Dimension.Y);
                         platform_local.Velocity = new Vector2(0, 0);
-                        platform_remote.Position = new Vector2(ScreenManager.Instance.Dimensions.X / 2 - platform_local.Dimension.X / 2,
-                            ScreenManager.Instance.Dimensions.Y - 20 - platform_local.Dimension.Y);
+                        platform_remote.Position = platform_remote.Position = new Vector2(ScreenManager.Instance.Dimensions.X / 2 
+                            - platform_remote.Dimension.X / 2, 20);
                         platform_remote.Velocity = new Vector2(0, 0);
                         
                         localPlatformMoving = false;
