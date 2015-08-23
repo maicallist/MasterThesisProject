@@ -1713,7 +1713,7 @@ namespace XNAServerClient
                      * my estimation position shifts to right by 100 from real position
                      */
 
-                    estPosition.X = windowWidth + windowWidth - estPosition.X - 100;
+                    estPosition.X = windowWidth - (estPosition.X - windowWidth);
                     //estPosition.X = windowWidth - ball.Origin.X - estPosition.X + windowWidth - ball.Origin.X - ball.Position.X;
                 }
                 else if (estPosition.X < 0)
