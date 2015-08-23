@@ -932,7 +932,7 @@ namespace XNAServerClient
                 {
                     lagIndicator = true;
                     //lagCounter = 180;
-                    lagCounter = 420;
+                    lagCounter = 9999;
                 }
             }
         }
