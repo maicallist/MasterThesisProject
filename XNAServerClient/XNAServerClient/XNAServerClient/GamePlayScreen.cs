@@ -23,7 +23,7 @@ namespace XNAServerClient
         Platform platform_local;
         Platform platform_remote;
         Ball ball;
-
+        Ball ballTest;
         //text member
         SpriteFont font;
 
@@ -201,6 +201,9 @@ namespace XNAServerClient
 
             ball = new Ball();
             ball.LoadContent(Content, inputManager);
+
+            ballTest = new Ball();
+            ballTest.LoadContent(Content, inputManager);
 
             gameStart = false;
             gameEnd = false;
@@ -488,7 +491,7 @@ namespace XNAServerClient
             //we now have to check whether AI controls the platform
             //if so, in platform.cs, disable player control
             platform_remote.Update(gameTime);
-            
+            ballTest.Update(gameTime);
             //update ballFlyingUp used in AI
             if (!isServer && ballFlyingUp && ball.Velocity.Y > 0)
             {
@@ -521,6 +524,13 @@ namespace XNAServerClient
                 {
                     movePlatformCenter = false;
                     hasPrediCenter = false;
+                    
+                    //calculate collision position
+                    if (!calcCollisionPos)
+                    {
+                        CalcCollisionPosition();
+                        calcCollisionPos = true;
+                    }
                 }
             }
 
@@ -564,13 +574,6 @@ namespace XNAServerClient
             if (lagFlag && AIControl && !isServer)
             {
                 testStr += "AI_control ";
-
-                //calculate collision position
-                if (!calcCollisionPos)
-                {
-                    CalcCollisionPosition();
-                    calcCollisionPos = true;
-                }
 
                 if (lagCompen == LagCompensation.PlayPattern)
                 {
@@ -646,8 +649,7 @@ namespace XNAServerClient
             }
             else
                 testStr += "Player_Control ";
-
-            testStr2 = "" + hasPrediCenter + " : " + movePlatformCenter;
+            
 
             //record dead reckoning
             //we check remote platform in receive packet function (host side)
@@ -897,7 +899,7 @@ namespace XNAServerClient
             ball.Draw(spriteBatch);
             platform_local.Draw(spriteBatch);
             platform_remote.Draw(spriteBatch);
-
+            ballTest.Draw(spriteBatch);
             if (gameStart && gameEnd)
                 spriteBatch.DrawString(font, "Press Space to Re-Start..",
                     new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Press Space to Re-Start..").X / 2,
@@ -1690,6 +1692,8 @@ namespace XNAServerClient
                     //now request to move
                     //flag up 
                     movePlatformRemote = true;
+
+                    ballTest.Position = estPosition;
                     break;
                 }
                 else if (estPosition.X > windowWidth) //ball hits right windows border
