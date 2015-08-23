@@ -599,12 +599,10 @@ namespace XNAServerClient
                     //we move platform
                     if (movePlatformRemote && hasPrediCatch)
                     {
-                        testStr2 = "Moving";
                         MoveRemotePlatform(targetPositionX, 1);
                     }
                     else if (hasPrediCenter)
                     {
-                        testStr2 = "Backing";
                         MoveRemotePlatform(ScreenManager.Instance.Dimensions.X/2, 3);
                     }
                 }
@@ -620,6 +618,7 @@ namespace XNAServerClient
                     //move to wrongx first
                     if (movePlatformRemote && moveRemoteWrong)
                     {
+                        testStr2 = "Wrong";
                         int num = rnd.Next(1, 101);
                         if (num < 95)
                         {
@@ -639,6 +638,7 @@ namespace XNAServerClient
                     //move to collision position
                     else if (movePlatformRemote && !moveRemoteWrong && moveWrongTimer <= 0)
                     {
+                        testStr2 = "Right";
                         MoveRemotePlatform(targetPositionX, 1);
                     }
                 }
@@ -1809,8 +1809,7 @@ namespace XNAServerClient
             //that is the distance we are going to move
             //to wrong direction
 
-            moveWrongTimer /= 3;
-            //moveWrongTimer /= 2;
+            moveWrongTimer /= 2;
            
             //see collision detection
             //i believe due to 
@@ -1822,7 +1821,7 @@ namespace XNAServerClient
             //and often misses ball at round 2, 7 and 11
 
             //temporal fix
-            //moveWrongTimer += rnd.Next(17, 20);
+            moveWrongTimer += rnd.Next(17, 20);
 
             //move to a wrong position
             if (targetPositionX > platform_remote.Position.X + platform_remote.Dimension.X / 5 * 3)
