@@ -180,14 +180,10 @@ namespace XNAServerClient
         string testStr = "";
         string testStr2 = "";
 
-        ContentManager contentRestart;
-        InputManager inputRestart;
         #endregion
 
         public override void LoadContent(ContentManager Content, InputManager inputManager)
         {
-            contentRestart = Content;
-            inputRestart = inputManager;
 
             base.LoadContent(Content, inputManager);
             
@@ -1277,6 +1273,7 @@ namespace XNAServerClient
                      *      process it and compare to local NTP time
                      *      work out how much time between two side started the game
                      * 'e': game end      
+                     * 'f': start game
                      */ 
                     hostTag = packetReader.ReadChar();
                     /* normal packet */
@@ -1416,6 +1413,58 @@ namespace XNAServerClient
                         ball.Velocity = new Vector2(0, 0);
                         gameEnd = true;
                     }
+                    else if (hostTag == 'f')
+                    {
+                        gameStart = false;
+                        gameEnd = false;
+
+                        ball.Position = new Vector2(ScreenManager.Instance.Dimensions.X / 2 - ball.ImageWidth / 2, 200);
+                        ball.Velocity = new Vector2(0, 0);
+
+                        platform_local.Position = new Vector2(ScreenManager.Instance.Dimensions.X / 2 - platform_local.Dimension.X / 2,
+                            ScreenManager.Instance.Dimensions.Y - 20 - platform_local.Dimension.Y);
+                        platform_local.Velocity = new Vector2(0, 0);
+                        platform_remote.Position = new Vector2(ScreenManager.Instance.Dimensions.X / 2 - platform_local.Dimension.X / 2,
+                            ScreenManager.Instance.Dimensions.Y - 20 - platform_local.Dimension.Y);
+                        platform_remote.Velocity = new Vector2(0, 0);
+                        
+                        localPlatformMoving = false;
+                        hostTag = '/';
+                        ballPos = new Vector2(0, 0);
+                        ballVel = new Vector2(0, 0);
+                        remotePlatformPos = new Vector2(0, 0);
+                        remotePlatformVel = new Vector2(0, 0);
+
+                        sendPacket = true;
+
+                        lagCompen = LagCompensation.EH_AI;
+                        lagFlag = false;
+
+                        DRTestMode = false;
+
+                        timeTag = new ArrayList();
+                        timeTagInMillisec = new ArrayList();
+
+                        initLagInMillisec = 0;
+
+                        lagCounter = 420;
+                        lagIndicator = false;
+                        AIControl = false;
+
+                        hasPrediCatch = false;
+                        hasPrediCenter = false;
+                        windowEdge = new Vector2(0, 0);
+
+                        calcCollisionPos = false;
+                        movePlatformRemote = false;
+                        movePlatformCenter = false;
+                        targetPositionX = 0f;
+
+                        checkMoveWrong = false;
+                        moveRemoteWrong = false;
+                        targetWrongX = 0f;
+                        rnd = new Random();
+                    }
                 }
             }
         }
@@ -1481,7 +1530,13 @@ namespace XNAServerClient
 
         void restart()
         {
-            LoadContent(contentRestart, inputRestart);
+            Console.WriteLine("Called");
+            //I'm lazy
+            //we're not telling client lag
+            //either host or client can use this 
+            //send messages
+            //we just need a new letter
+            tellClientLag('f');
         }
 
         #region XNA-Xbox live service
