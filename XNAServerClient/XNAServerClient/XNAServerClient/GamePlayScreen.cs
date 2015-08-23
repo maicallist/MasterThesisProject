@@ -617,8 +617,7 @@ namespace XNAServerClient
                     
                     //move to wrongx first
                     if (movePlatformRemote && moveRemoteWrong)
-                    {
-                        testStr2 = "Wrong : " + moveRemoteWrong + " : " + movePlatformRemote;
+                    {            
                         int num = rnd.Next(1, 101);
                         if (num < 95)
                         {
@@ -638,13 +637,14 @@ namespace XNAServerClient
                     //move to collision position
                     else if (movePlatformRemote && !moveRemoteWrong && moveWrongTimer <= 0)
                     {
-                        testStr2 = "Right : " + moveRemoteWrong + " : " + movePlatformRemote;
                         MoveRemotePlatform(targetPositionX, 1);
                     }
                 }
             }
             else
                 testStr += "Player_Control ";
+
+            testStr2 = "chech : " + checkMoveWrong + " / moveWrong : " + moveRemoteWrong;
 
             //record dead reckoning
             //we check remote platform in receive packet function (host side)
