@@ -103,6 +103,7 @@ namespace XNAServerClient
 
         bool calcCollisionPos;
         bool movePlatformRemote;
+        bool movePlatformCenter;
 
         //X coordinate where AI needs to move
         float targetPositionX;
@@ -254,6 +255,7 @@ namespace XNAServerClient
 
             calcCollisionPos = false;
             movePlatformRemote = false;
+            movePlatformCenter = false;
             targetPositionX = 0f;
 
             checkMoveWrong = false;
@@ -517,7 +519,7 @@ namespace XNAServerClient
 
                 if (AIControl)
                 {
-                    checkMoveWrong = false;
+                    movePlatformCenter = false;
                     hasPrediCenter = false;
                 }
             }
@@ -544,6 +546,7 @@ namespace XNAServerClient
                 calcCollisionPos = false;
                 hasPrediCatch = false;
                 movePlatformRemote = false;
+                movePlatformCenter = false;
                 hasPrediCenter = false;
                 targetPositionX = 0f;
                 checkMoveWrong = false;
@@ -601,7 +604,7 @@ namespace XNAServerClient
                     {
                         MoveRemotePlatform(targetPositionX, 1);
                     }
-                    else if (hasPrediCenter)
+                    else if (movePlatformCenter && hasPrediCenter)
                     {
                         MoveRemotePlatform(ScreenManager.Instance.Dimensions.X/2, 3);
                     }
@@ -1741,6 +1744,7 @@ namespace XNAServerClient
                         moveRemoteWrong = false;
                         break;
                     case 3:
+                        movePlatformCenter = false;
                         break;
                 }
             }
