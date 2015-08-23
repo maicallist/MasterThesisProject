@@ -179,12 +179,16 @@ namespace XNAServerClient
         /*******************************************/
         string testStr = "";
         string testStr2 = "";
-        
 
+        ContentManager contentRestart;
+        InputManager inputRestart;
         #endregion
 
         public override void LoadContent(ContentManager Content, InputManager inputManager)
         {
+            contentRestart = Content;
+            inputRestart = inputManager;
+
             base.LoadContent(Content, inputManager);
             
             //loading assets
@@ -811,6 +815,10 @@ namespace XNAServerClient
             //and let remote player update ball position at remote platform side
             
 
+
+            //restore game state
+            if (inputManager.KeyPressed(Keys.R))
+                restart();
         }
 
         public override void Draw(SpriteBatch spriteBatch)
@@ -1469,6 +1477,11 @@ namespace XNAServerClient
                 // Send it to all remote gamers.
                 gamer.SendData(packetWriter, SendDataOptions.InOrder);
             }
+        }
+
+        void restart()
+        {
+            LoadContent(contentRestart, inputRestart);
         }
 
         #region XNA-Xbox live service
