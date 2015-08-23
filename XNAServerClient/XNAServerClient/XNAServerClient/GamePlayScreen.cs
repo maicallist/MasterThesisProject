@@ -294,7 +294,7 @@ namespace XNAServerClient
             UpdateInput(gameTime);
 
             //check game start state
-            if (!gameStart && session != null && session.SessionState == NetworkSessionState.Lobby)
+            if (!gameStart && session != null && session.AllGamers.Count > 1)
             {
                 if (inputManager.KeyPressed(Keys.Y) && isServer)
                 {
