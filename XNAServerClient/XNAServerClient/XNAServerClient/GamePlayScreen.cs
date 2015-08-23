@@ -298,7 +298,8 @@ namespace XNAServerClient
             {
                 if (inputManager.KeyPressed(Keys.Y) && isServer)
                 {
-                    session.StartGame();
+                    if (session.SessionState == NetworkSessionState.Lobby)
+                        session.StartGame();
                     //notify all clients
                     foreach (LocalNetworkGamer gamer in session.LocalGamers)
                     {
@@ -900,10 +901,17 @@ namespace XNAServerClient
             platform_remote.Draw(spriteBatch);
 
             if (!gameStart && !gameEnd && session != null
-                && session.SessionState == NetworkSessionState.Playing)
+                && session.SessionState == NetworkSessionState.Playing && isServer)
                 spriteBatch.DrawString(font, "Press Y to Re-Start..",
-                    new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Press Space to Re-Start..").X / 2,
-                        ScreenManager.Instance.Dimensions.Y / 2),
+                    new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Press Y to Re-Start..").X / 2,
+                        ScreenManager.Instance.Dimensions.Y / 2 - 30),
+                    Color.White);
+
+            if (!gameStart && !gameEnd && session != null
+                && session.SessionState == NetworkSessionState.Playing && !isServer)
+                spriteBatch.DrawString(font, "Wait Host to Start..",
+                    new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Wait Host to Start..").X / 2,
+                        ScreenManager.Instance.Dimensions.Y / 2 - 30),
                     Color.White);
 
             spriteBatch.DrawString(font, testStr,
