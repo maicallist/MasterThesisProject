@@ -328,6 +328,11 @@ namespace XNAServerClient
                 }
             }
 
+            //check restart kep press
+            //restore game state
+            if (inputManager.KeyPressed(Keys.R))
+                restart();
+
             //update local platform velocity for transmission
             if (inputManager.KeyUp(Keys.Left) && inputManager.KeyUp(Keys.Right))
             {
@@ -809,12 +814,6 @@ namespace XNAServerClient
             //because we are implementing a P2P game(not entirely)
             //therefore we only check ball position at local platform side
             //and let remote player update ball position at remote platform side
-            
-
-
-            //restore game state
-            if (inputManager.KeyPressed(Keys.R))
-                restart();
         }
 
         public override void Draw(SpriteBatch spriteBatch)
