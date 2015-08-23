@@ -223,7 +223,7 @@ namespace XNAServerClient
 
             sendPacket = true;
 
-            lagCompen = LagCompensation.EH_AI;
+            lagCompen = LagCompensation.PlayPattern;
             lagFlag = false;
 
             DRTestMode = false;
@@ -647,7 +647,7 @@ namespace XNAServerClient
             else
                 testStr += "Player_Control ";
 
-            testStr2 = "chech : " + checkMoveWrong + " / moveWrong : " + moveRemoteWrong;
+            testStr2 = "" + hasPrediCenter + " : " + movePlatformCenter;
 
             //record dead reckoning
             //we check remote platform in receive packet function (host side)
@@ -1625,7 +1625,10 @@ namespace XNAServerClient
                 + state.pPos.X * -0.11275278 + 654.4130811;
 
             if (Math.Abs(db - state.bPos.Y) <= 3 || state.bPos.Y < 400)
+            {
                 hasPrediCenter = true;
+                movePlatformCenter = true;
+            }
         }
 
         //the player profile we use
