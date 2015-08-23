@@ -1674,7 +1674,7 @@ namespace XNAServerClient
             //which takes how many updates (vertical speed, 10 per update)
             temp = temp / 10;
             //apply to harizontal, this coordinates is likely outside of windows
-            estPosition.X = estPosition.X + ball.Velocity.X * temp;
+            estPosition.X = estPosition.X + ball.Velocity.X * temp + ball.ImageWidth/2;
             estPosition.Y = 20 + platform_remote.Dimension.Y;
 
             int windowWidth = (int)ScreenManager.Instance.Dimensions.X;
