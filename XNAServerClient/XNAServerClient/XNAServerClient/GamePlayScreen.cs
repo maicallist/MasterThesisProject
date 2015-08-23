@@ -310,7 +310,7 @@ namespace XNAServerClient
                         gamer.SendData(packetWriter, SendDataOptions.InOrder);
                     }
 
-                    ball.Velocity = new Vector2(-7, -10);
+                    ball.Velocity = new Vector2(-7, 10);
                     gameStart = true;
                     sendPacket = true;
 
@@ -770,7 +770,7 @@ namespace XNAServerClient
                 //therefore it is important that
                 //test subjects only play on client machine
 
-                testStr += "Ping_" + session.SimulatedLatency + " ";
+                testStr += "Ping_" + session.SimulatedLatency.TotalMilliseconds + " ";
             }
 
             if (session != null)
