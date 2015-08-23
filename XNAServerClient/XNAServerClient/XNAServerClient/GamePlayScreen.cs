@@ -226,7 +226,7 @@ namespace XNAServerClient
 
             sendPacket = true;
 
-            lagCompen = LagCompensation.PlayPattern;
+            lagCompen = LagCompensation.EH_AI;
             lagFlag = false;
 
             DRTestMode = false;
