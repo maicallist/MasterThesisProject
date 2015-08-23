@@ -899,7 +899,7 @@ namespace XNAServerClient
             platform_local.Draw(spriteBatch);
             platform_remote.Draw(spriteBatch);
 
-            if (!gameStart && !gameEnd 
+            if (!gameStart && !gameEnd && session != null
                 && session.SessionState == NetworkSessionState.Playing)
                 spriteBatch.DrawString(font, "Press Y to Re-Start..",
                     new Vector2(ScreenManager.Instance.Dimensions.X / 2 - font.MeasureString("Press Space to Re-Start..").X / 2,
