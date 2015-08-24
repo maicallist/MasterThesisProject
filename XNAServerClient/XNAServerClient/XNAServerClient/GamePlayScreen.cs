@@ -1377,6 +1377,7 @@ namespace XNAServerClient
                         //as a recevier, if lag ends, consischeck
                         if (!isServer)
                             lagFlag = true;
+                        Console.WriteLine(current + " Receive L");
                         //we are the client
                         //and we have received a lag flag
                         //it's time to enable our AI to replace player
@@ -1395,6 +1396,7 @@ namespace XNAServerClient
                         {
                             lagFlag = false;
                             AIControl = false;
+                            Console.WriteLine(current + " Receive N");
                         }
                     }
                     else if (hostTag == 'p' && isServer)
