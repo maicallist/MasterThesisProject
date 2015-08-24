@@ -1587,6 +1587,8 @@ namespace XNAServerClient
                         }
                     }
                 }
+                //clear array
+                AISwitch.Clear();
             }
             //I'm lazy
             //we're not telling client lag
