@@ -594,7 +594,7 @@ namespace XNAServerClient
                 //append switch info
                 if (!prevAIControlling)
                 {
-                    AISwitch.Add("" + current + "\nAI Controlling");
+                    AISwitch.Add("" + current + "\tAI Controlling");
                     prevAIControlling = true;
                 }
 
@@ -675,7 +675,7 @@ namespace XNAServerClient
                 testStr += "Player_Control ";
                 if (!isServer && prevAIControlling)
                 {
-                    AISwitch.Add("" + current + "\nPlayer Controlling");
+                    AISwitch.Add("" + current + "\tPlayer Controlling");
                     prevAIControlling = false;
                 }
             }
@@ -1419,7 +1419,7 @@ namespace XNAServerClient
                         //we have received a game start notification from host
                         ball.Velocity = new Vector2(-7, -10);
                         gameStart = true;
-                        AISwitch.Add("" + current + "\nGameStart");
+                        AISwitch.Add("" + current + "\tGameStart");
                         //if we are recording DR data 
                         if (DRTestMode)
                         {
@@ -1568,7 +1568,7 @@ namespace XNAServerClient
             if (!isServer && AISwitch.Count > 0)
             {
                 //record when player end game
-                AISwitch.Add("" + current + "\nPlayerTerminates");
+                AISwitch.Add("" + current + "\tPlayerTerminates");
                 //output AISwitch array
                 string path = @"./PlayerToAI.txt";
                 if (!File.Exists(path))
