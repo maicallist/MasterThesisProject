@@ -184,9 +184,6 @@ namespace XNAServerClient
         string testStr = "";
         string testStr2 = "";
 
-        const TimeSpan interval = new TimeSpan(0, 0, 0, 2);
-        TimeSpan lastSwitch = new TimeSpan(1, 0, 0, 0);
-
         #endregion
 
         public override void LoadContent(ContentManager Content, InputManager inputManager)
@@ -591,16 +588,16 @@ namespace XNAServerClient
             //if we have done the pre-state check
             //and AI has the green light
             //shopping time!
-            if (lagFlag && AIControl && !isServer
-                && current.Subtract(interval) > lastSwitch)
+            if (lagFlag && AIControl && !isServer)
             {
                 testStr += "AI_control ";
+                
                 //append switch info
                 if (!prevAIControlling)
                 {
                     AISwitch.Add("" + current + "\tAI Controlling");
                     prevAIControlling = true;
-                    lastSwitch = current;
+                    Console.WriteLine("AI " + current + " " + lagFlag + " " + AIControl);
                 }
 
                 if (lagCompen == LagCompensation.PlayPattern)
@@ -678,11 +675,11 @@ namespace XNAServerClient
             else
             {
                 testStr += "Player_Control ";
-                if (!isServer && prevAIControlling && current.Subtract(interval) > lastSwitch)
+                if (!isServer && prevAIControlling)
                 {
                     AISwitch.Add("" + current + "\tPlayer Controlling");
                     prevAIControlling = false;
-                    lastSwitch = current;
+                    Console.WriteLine("Player " + current + " " + lagFlag + " " + AIControl);
                 }
             }
 
