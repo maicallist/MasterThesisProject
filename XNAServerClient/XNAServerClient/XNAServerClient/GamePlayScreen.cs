@@ -174,6 +174,9 @@ namespace XNAServerClient
         }
 
         statePack currentState;
+        //every time we switch between
+        //AI and human, we record it
+        ArrayList AISwitch;
         /*******************************************/
         /*all variables defined beliw are temproral*/
         /*******************************************/
@@ -261,6 +264,8 @@ namespace XNAServerClient
             moveRemoteWrong = false;
             targetWrongX = 0f;
             rnd = new Random();
+
+            AISwitch = new ArrayList();
         }
 
         public override void UnloadContent()
@@ -329,10 +334,18 @@ namespace XNAServerClient
                 }
             }
 
-            //check restart kep press
+            //check restart key press
             //restore game state
             if (inputManager.KeyPressed(Keys.R))
                 restart();
+
+            //check game exit key press
+            if (inputManager.KeyPressed(Keys.P) && !DRTestMode
+                && AISwitch.Count != 0)
+            { 
+                
+
+            }
 
             //update local platform velocity for transmission
             if (inputManager.KeyUp(Keys.Left) && inputManager.KeyUp(Keys.Right))
@@ -576,6 +589,8 @@ namespace XNAServerClient
             if (lagFlag && AIControl && !isServer)
             {
                 testStr += "AI_control ";
+                //append switch info
+                AISwitch.Add("" + current + "\nAI Controlling");
 
                 if (lagCompen == LagCompensation.PlayPattern)
                 {
@@ -611,7 +626,7 @@ namespace XNAServerClient
                     }
                     else if (movePlatformCenter && hasPrediCenter)
                     {
-                        MoveRemotePlatform(ScreenManager.Instance.Dimensions.X/2, 3);
+                        MoveRemotePlatform(ScreenManager.Instance.Dimensions.X / 2, 3);
                     }
                 }
                 else if (lagCompen == LagCompensation.EH_AI)
@@ -622,10 +637,10 @@ namespace XNAServerClient
                         CalcRemoteWrongPosition();
                         checkMoveWrong = true;
                     }
-                    
+
                     //move to wrongx first
                     if (movePlatformRemote && moveRemoteWrong)
-                    {            
+                    {
                         int num = rnd.Next(1, 101);
                         if (num < 95)
                         {
@@ -650,8 +665,11 @@ namespace XNAServerClient
                 }
             }
             else
+            {
                 testStr += "Player_Control ";
-            
+                if (!isServer)
+                    AISwitch.Add("" + current + "\nPlayer Controlling");
+            }
 
             //record dead reckoning
             //we check remote platform in receive packet function (host side)
@@ -1392,7 +1410,7 @@ namespace XNAServerClient
                         //we have received a game start notification from host
                         ball.Velocity = new Vector2(-7, -10);
                         gameStart = true;
-
+                        AISwitch.Add("" + current + "\nGameStart");
                         //if we are recording DR data 
                         if (DRTestMode)
                         {
@@ -1538,7 +1556,29 @@ namespace XNAServerClient
 
         void restart()
         {
-            Console.WriteLine("Called");
+            if (!isServer && AISwitch.Count > 0)
+            {
+                //record when player end game
+                AISwitch.Add("" + current + "\nPlayerTerminates");
+                //output AISwitch array
+                string path = @"./PlayerToAI.txt";
+                if (!File.Exists(path))
+                    File.Create(path).Dispose();
+                //file exist
+                if (File.Exists(path))
+                {
+                    //append data  
+                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(path, true))
+                    {
+                        string str;
+                        for (int i = 0; i < AISwitch.Count; i++)
+                        {
+                            str = "" + AISwitch[i];
+                            file.WriteLine(str);
+                        }
+                    }
+                }
+            }
             //I'm lazy
             //we're not telling client lag
             //either host or client can use this 
