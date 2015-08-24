@@ -177,6 +177,7 @@ namespace XNAServerClient
         //every time we switch between
         //AI and human, we record it
         ArrayList AISwitch;
+        bool prevAIControlling;
         /*******************************************/
         /*all variables defined beliw are temproral*/
         /*******************************************/
@@ -266,6 +267,7 @@ namespace XNAServerClient
             rnd = new Random();
 
             AISwitch = new ArrayList();
+            prevAIControlling = false;
         }
 
         public override void UnloadContent()
@@ -590,7 +592,11 @@ namespace XNAServerClient
             {
                 testStr += "AI_control ";
                 //append switch info
-                AISwitch.Add("" + current + "\nAI Controlling");
+                if (!prevAIControlling)
+                {
+                    AISwitch.Add("" + current + "\nAI Controlling");
+                    prevAIControlling = true;
+                }
 
                 if (lagCompen == LagCompensation.PlayPattern)
                 {
@@ -667,8 +673,11 @@ namespace XNAServerClient
             else
             {
                 testStr += "Player_Control ";
-                if (!isServer)
+                if (!isServer && prevAIControlling)
+                {
                     AISwitch.Add("" + current + "\nPlayer Controlling");
+                    prevAIControlling = false;
+                }
             }
 
             //record dead reckoning
@@ -962,8 +971,8 @@ namespace XNAServerClient
                 else if (lagCounter == 0 && !lagIndicator)
                 {
                     lagIndicator = true;
-                    //lagCounter = 180;
-                    lagCounter = 9999;
+                    lagCounter = 180;
+                    //lagCounter = 9999;
                 }
             }
         }
