@@ -773,17 +773,23 @@ namespace XNAServerClient
                 //and only clients change that flag, enable AI features
                 if (randomLag >= 450)
                 {
-                    //mark on host side
-                    //so we remember 
-                    //what state we are in 
-                    AIControl = true;
-                    //tell client lag
-                    tellClientLag('l');
+                    if (!AIControl)
+                    {
+                        //tell client lag
+                        tellClientLag('l');
+                        //mark on host side
+                        //so we remember 
+                        //what state we are in 
+                        AIControl = true;
+                    }
                 }
                 else
                 {
-                    AIControl = false;
-                    tellClientLag('n');
+                    if (AIControl)
+                    {
+                        tellClientLag('n');
+                        AIControl = false;
+                    }
                 }
                 //apply lag
                 TimeSpan lagh = new TimeSpan(0, 0, 0, 0, randomLag);
